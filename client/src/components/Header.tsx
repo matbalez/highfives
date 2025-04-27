@@ -1,5 +1,5 @@
 import { useStore } from "../lib/store.tsx";
-import highFivesIcon from "../assets/highfives-icon-square.png";
+import highFivesLogo from "../assets/highfives-logo.png";
 
 export default function Header() {
   const { bitcoinBalance } = useStore();
@@ -7,10 +7,10 @@ export default function Header() {
   return (
     <header className="sticky top-0 bg-white shadow-md z-10">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="logo">
-          <img src={highFivesIcon} alt="High Fives Logo" className="h-10" />
+        <div className="logo flex justify-center flex-grow">
+          <img src={highFivesLogo} alt="High Fives Logo" className="h-12" />
         </div>
-        <div className="bitcoin-symbol font-futura font-bold text-primary">
+        <div className="bitcoin-symbol font-futura font-bold text-primary absolute right-4">
           <span className="text-black">{bitcoinBalance.toLocaleString()}</span> bitcoins
         </div>
       </div>
