@@ -77,91 +77,100 @@ export default function HighFiveForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="recipient"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="font-futura font-bold">Who to High Five</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
-                  <Input
-                    placeholder="Enter ₿tag"
-                    className="p-3 pl-8 focus:ring-primary"
-                    {...field}
-                  />
-                </div>
-              </FormControl>
-            </FormItem>
-          )}
+    <>
+      {successDetails ? (
+        <SuccessScreen 
+          highFive={successDetails} 
+          onClose={closeSuccessScreen} 
         />
+      ) : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="recipient"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="font-futura font-bold">Who to High Five</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
+                      <Input
+                        placeholder="Enter ₿tag"
+                        className="p-3 pl-8 focus:ring-primary"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="reason"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="font-futura font-bold">For what?</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Tell them (specifically!) what they did that made bitcoin better."
-                  className="p-3 focus:ring-primary"
-                  rows={3}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="reason"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="font-futura font-bold">For what?</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Tell them (specifically!) what they did that made bitcoin better."
+                      className="p-3 focus:ring-primary"
+                      rows={3}
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="font-futura font-bold">Bonus - in bitcoins (aka satoshis)</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    className="p-3 pr-8 focus:ring-primary"
-                    {...field}
-                  />
-                  <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">₿</span>
-                </div>
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="font-futura font-bold">Bonus - in bitcoins (aka satoshis)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        className="p-3 pr-8 focus:ring-primary"
+                        {...field}
+                      />
+                      <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">₿</span>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="sender"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="font-futura font-bold">From:</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Your name or handle (Optional)"
-                  className="p-3 focus:ring-primary"
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="sender"
+              render={({ field }) => (
+                <FormItem className="space-y-2">
+                  <FormLabel className="font-futura font-bold">From:</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Your name or handle (Optional)"
+                      className="p-3 focus:ring-primary"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-        <Button
-          type="submit"
-          className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
-        >
-          Send High Five
-        </Button>
-      </form>
-    </Form>
+            <Button
+              type="submit"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
+            >
+              Send High Five
+            </Button>
+          </form>
+        </Form>
+      )}
+    </>
   );
 }

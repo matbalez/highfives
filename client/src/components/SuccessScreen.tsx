@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import highFivesLogo from "../assets/hf-square.png";
+import highFivesLogo from "../assets/hf square.png";
 import { HighFiveDetails } from "../lib/types";
 
 interface SuccessScreenProps {

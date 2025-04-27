@@ -1,5 +1,5 @@
 import { useStore } from "../lib/store.tsx";
-import highFivesLogo from "../assets/hf-square.png";
+import highFivesLogo from "../assets/hf square.png";
 
 export default function Header() {
   const { bitcoinBalance } = useStore();
