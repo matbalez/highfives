@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useStore } from "../lib/store.tsx";
 import { useToast } from "@/hooks/use-toast";
+import { HighFiveDetails } from "../lib/types";
+import SuccessScreen from "./SuccessScreen";
 
 const formSchema = z.object({
   recipient: z.string().min(1, {
@@ -30,8 +33,9 @@ const formSchema = z.object({
 });
 
 export default function HighFiveForm() {
-  const { bitcoinBalance, setBitcoinBalance, showNotification } = useStore();
+  const { bitcoinBalance, setBitcoinBalance } = useStore();
   const { toast } = useToast();
+  const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,10 +61,18 @@ export default function HighFiveForm() {
     // Deduct from balance
     setBitcoinBalance(bitcoinBalance - values.amount);
 
-    // Show notification
-    showNotification();
-
-    // Reset form
+    // Show success screen with details
+    setSuccessDetails({
+      recipient: values.recipient,
+      reason: values.reason,
+      amount: values.amount,
+      sender: values.sender || undefined,
+    });
+  }
+  
+  const closeSuccessScreen = () => {
+    setSuccessDetails(null);
+    // Reset form after closing success screen
     form.reset();
   }
 
