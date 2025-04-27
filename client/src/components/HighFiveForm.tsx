@@ -91,12 +91,13 @@ export default function HighFiveForm() {
               name="recipient"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold">Who to High Five</FormLabel>
+                  <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
                   <FormControl>
                     <div className="relative">
+                      <span className="absolute inset-y-0 left-3 flex items-center text-primary">₿</span>
                       <Input
-                        placeholder="Enter username"
-                        className="p-3 focus:ring-primary"
+                        placeholder="Enter a ₿tag"
+                        className="p-3 pl-8 focus:ring-primary"
                         {...field}
                       />
                     </div>
@@ -110,7 +111,7 @@ export default function HighFiveForm() {
               name="reason"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold">For what?</FormLabel>
+                  <FormLabel className="font-futura font-bold text-lg">For what?</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Tell them (specifically!) what they did that made bitcoin better."
@@ -128,7 +129,7 @@ export default function HighFiveForm() {
               name="amount"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold">Bonus - in bitcoins (aka satoshis)</FormLabel>
+                  <FormLabel className="font-futura font-bold text-lg">Bonus - in bitcoins (aka satoshis)</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
@@ -149,7 +150,7 @@ export default function HighFiveForm() {
               name="sender"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold">From:</FormLabel>
+                  <FormLabel className="font-futura font-bold text-lg">From:</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Your name or handle (Optional)"
