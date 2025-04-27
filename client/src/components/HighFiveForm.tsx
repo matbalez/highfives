@@ -80,7 +80,7 @@ export default function HighFiveForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription className="text-sm text-gray-600">
+              <FormDescription className="text-sm text-gray-600 font-normal">
                 ₿tag or on-chain address
               </FormDescription>
             </FormItem>
@@ -101,7 +101,7 @@ export default function HighFiveForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription className="text-sm text-gray-600">
+              <FormDescription className="text-sm text-gray-600 font-normal">
                 Tell them (specifically!) what they did that made bitcoin better.
               </FormDescription>
             </FormItem>
@@ -113,7 +113,7 @@ export default function HighFiveForm() {
           name="amount"
           render={({ field }) => (
             <FormItem className="space-y-2">
-              <FormLabel className="font-futura font-bold">Bonus:</FormLabel>
+              <FormLabel className="font-futura font-bold">Bonus - in bitcoins (aka satoshis)</FormLabel>
               <FormControl>
                 <div className="relative">
                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
@@ -126,7 +126,7 @@ export default function HighFiveForm() {
                   />
                 </div>
               </FormControl>
-              <FormDescription className="text-sm text-gray-600">
+              <FormDescription className="text-sm text-gray-600 font-normal">
                 bitcoins (aka satoshis)
               </FormDescription>
             </FormItem>
@@ -146,7 +146,7 @@ export default function HighFiveForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription className="text-sm text-gray-600">
+              <FormDescription className="text-sm text-gray-600 font-normal">
                 Your name or handle. Optional.
               </FormDescription>
             </FormItem>
