@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import highFivesLogo from "../assets/hf square.png";
-import { HighFiveDetails } from "../lib/types";
+import highFivesLogo from "@/assets/hf square.png";
+import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface SuccessScreenProps {
@@ -56,7 +56,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                   High Five sent to:
                 </p>
                 <p className="text-2xl font-bold mt-2">
-                  <span className="text-primary">₿</span>{highFive.recipient}
+                  <span className="text-black">₿</span>{highFive.recipient}
                 </p>
               </div>
               

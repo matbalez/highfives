@@ -94,7 +94,7 @@ export default function HighFiveForm() {
                   <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-3 flex items-center text-primary">₿</span>
+                      <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
                       <Input
                         placeholder="Enter a ₿tag"
                         className="p-3 pl-8 focus:ring-primary"
