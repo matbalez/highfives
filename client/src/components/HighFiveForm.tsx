@@ -80,9 +80,6 @@ export default function HighFiveForm() {
                   {...field}
                 />
               </FormControl>
-              <FormDescription className="text-sm text-gray-600 font-normal">
-                ₿tag or on-chain address
-              </FormDescription>
             </FormItem>
           )}
         />
@@ -95,15 +92,12 @@ export default function HighFiveForm() {
               <FormLabel className="font-futura font-bold">For what?</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Share your appreciation..."
+                  placeholder="Tell them (specifically!) what they did that made bitcoin better."
                   className="p-3 focus:ring-primary"
                   rows={3}
                   {...field}
                 />
               </FormControl>
-              <FormDescription className="text-sm text-gray-600 font-normal">
-                Tell them (specifically!) what they did that made bitcoin better.
-              </FormDescription>
             </FormItem>
           )}
         />
@@ -126,9 +120,6 @@ export default function HighFiveForm() {
                   />
                 </div>
               </FormControl>
-              <FormDescription className="text-sm text-gray-600 font-normal">
-                bitcoins (aka satoshis)
-              </FormDescription>
             </FormItem>
           )}
         />
@@ -141,34 +132,19 @@ export default function HighFiveForm() {
               <FormLabel className="font-futura font-bold">From:</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="Your name or handle"
+                  placeholder="Your name or handle (Optional)"
                   className="p-3 focus:ring-primary"
                   {...field}
                 />
               </FormControl>
-              <FormDescription className="text-sm text-gray-600 font-normal">
-                Your name or handle. Optional.
-              </FormDescription>
             </FormItem>
           )}
         />
 
         <Button
           type="submit"
-          className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center justify-center"
+          className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-2"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
           Send High Five
         </Button>
       </form>
