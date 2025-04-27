@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import highFivesLogo from "../assets/hf square.png";
 import { HighFiveDetails } from "../lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -10,13 +10,17 @@ interface SuccessScreenProps {
 
 export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps) {
   const { toast } = useToast();
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
-    // Show toast notification
-    toast({
-      title: "Your High Five was sent",
-      duration: 3000,
-    });
+    // Show toast notification only once
+    if (!toastShownRef.current) {
+      toast({
+        title: "Your High Five was sent",
+        duration: 3000,
+      });
+      toastShownRef.current = true;
+    }
 
     // Handle click outside to close dialog
     const handleClickOutside = (e: MouseEvent) => {
