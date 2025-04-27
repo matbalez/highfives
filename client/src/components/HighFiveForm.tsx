@@ -38,7 +38,7 @@ export default function HighFiveForm() {
     defaultValues: {
       recipient: "",
       reason: "",
-      amount: 0,
+      amount: 100000,
       sender: "",
     },
   });
@@ -112,10 +112,9 @@ export default function HighFiveForm() {
                 <div className="relative">
                   <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
                   <Input
-                    type="number"
-                    placeholder="0"
+                    type="text"
+                    inputMode="numeric"
                     className="p-3 pl-8 focus:ring-primary"
-                    min={0}
                     {...field}
                   />
                 </div>
