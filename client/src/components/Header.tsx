@@ -11,7 +11,7 @@ export default function Header() {
           <img src={highFivesLogo} alt="High Fives Logo" className="h-12" />
         </div>
         <div className="bitcoin-symbol font-futura font-bold text-black">
-          {bitcoinBalance.toLocaleString()} ₿
+          {bitcoinBalance.toLocaleString()} <span className="text-primary">₿</span>
         </div>
       </div>
     </header>

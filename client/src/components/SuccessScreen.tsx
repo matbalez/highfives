@@ -27,7 +27,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                   You sent a High Five to
                 </p>
                 <p className="text-2xl font-bold mt-2">
-                  ₿{highFive.recipient}
+                  {highFive.recipient}
                 </p>
               </div>
               
@@ -38,7 +38,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm text-gray-500">Amount</p>
-                  <p className="text-xl font-bold">{highFive.amount.toLocaleString()} ₿</p>
+                  <p className="text-xl font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
                 </div>
                 {highFive.sender && (
                   <div className="text-right">

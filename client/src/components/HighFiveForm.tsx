@@ -94,10 +94,9 @@ export default function HighFiveForm() {
                   <FormLabel className="font-futura font-bold">Who to High Five</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
                       <Input
-                        placeholder="Enter ₿tag"
-                        className="p-3 pl-8 focus:ring-primary"
+                        placeholder="Enter username"
+                        className="p-3 focus:ring-primary"
                         {...field}
                       />
                     </div>
@@ -138,7 +137,7 @@ export default function HighFiveForm() {
                         className="p-3 pr-8 focus:ring-primary"
                         {...field}
                       />
-                      <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">₿</span>
+                      <span className="absolute inset-y-0 right-3 flex items-center text-primary">₿</span>
                     </div>
                   </FormControl>
                 </FormItem>
