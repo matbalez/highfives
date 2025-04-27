@@ -1,6 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 import highFivesLogo from "../assets/hf square.png";
 import { HighFiveDetails } from "../lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface SuccessScreenProps {
   highFive: HighFiveDetails;
@@ -8,26 +9,50 @@ interface SuccessScreenProps {
 }
 
 export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps) {
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Show toast notification
+    toast({
+      title: "Your High Five was sent",
+      duration: 3000,
+    });
+
+    // Handle click outside to close dialog
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('backdrop')) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose, toast]);
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+    <div 
+      className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop"
+      aria-modal="true"
+      role="dialog"
+    >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 m-4 relative">
         <div className="flex flex-col items-center">
           {/* Logo */}
-          <img src={highFivesLogo} alt="High Fives Logo" className="h-16 mb-4" />
-          
-          <h1 className="text-2xl font-futura font-bold text-center mb-6">
-            High Five Sent!
-          </h1>
+          <img src={highFivesLogo} alt="High Fives Logo" className="h-20 mb-5" />
           
           {/* Card content */}
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 w-full mb-6 border border-orange-200 shadow-sm">
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 w-full border border-orange-200 shadow-sm">
             <div className="space-y-4">
               <div className="text-center mb-6">
                 <p className="text-xl font-bold font-futura text-primary">
-                  You sent a High Five to
+                  High Five sent to:
                 </p>
                 <p className="text-2xl font-bold mt-2">
-                  {highFive.recipient}
+                  <span className="text-primary">₿</span>{highFive.recipient}
                 </p>
               </div>
               
@@ -49,13 +74,6 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
               </div>
             </div>
           </div>
-          
-          <Button 
-            onClick={onClose}
-            className="bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300 w-full"
-          >
-            Send Another High Five
-          </Button>
         </div>
       </div>
     </div>
