@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <style>
+    .hand-orange { fill: #FF9F1C; }
+    .hand-white { fill: #FFFFFF; }
+    .hand-outline, .shine { fill: #000000; }
+    .text { font-family: 'Futura', 'Montserrat', sans-serif; font-weight: bold; font-size: 60px; }
+  </style>
+  
+  <!-- Shine lines -->
+  <path class="shine" d="M112 190 L140 160 M160 130 L150 120 M180 150 L190 140"/>
+  
+  <!-- Hands -->
+  <path class="hand-outline" d="M230 200 C210 180 200 170 190 150 C180 130 170 120 165 110 C160 100 155 90 150 90 C145 90 140 100 140 110 L140 160 C140 160 130 150 120 140 C110 130 100 120 90 120 C80 120 70 130 70 140 C70 150 80 160 90 170 L140 220 C160 240 180 250 200 250 C220 250 240 230 240 210 C240 210 235 205 230 200 Z"/>
+  <path class="hand-orange" d="M140 160 L140 110 C140 100 145 90 150 90 C155 90 160 100 165 110 C170 120 180 130 190 150 C200 170 210 180 230 200 C235 205 240 210 240 210 C240 230 220 250 200 250 C180 250 160 240 140 220 L120 200 Z"/>
+  <path class="hand-white" d="M70 140 C70 130 80 120 90 120 C100 120 110 130 120 140 C130 150 140 160 140 160 L120 180 L90 150 C80 140 70 150 70 140 Z"/>
+</svg>
