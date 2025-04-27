@@ -74,11 +74,14 @@ export default function HighFiveForm() {
             <FormItem className="space-y-2">
               <FormLabel className="font-futura font-bold">Who to High Five</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Enter ₿tag or on-chain address"
-                  className="p-3 focus:ring-primary"
-                  {...field}
-                />
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
+                  <Input
+                    placeholder="Enter ₿tag"
+                    className="p-3 pl-8 focus:ring-primary"
+                    {...field}
+                  />
+                </div>
               </FormControl>
             </FormItem>
           )}
@@ -110,13 +113,13 @@ export default function HighFiveForm() {
               <FormLabel className="font-futura font-bold">Bonus - in bitcoins (aka satoshis)</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">₿</span>
                   <Input
                     type="text"
                     inputMode="numeric"
-                    className="p-3 pl-8 focus:ring-primary"
+                    className="p-3 pr-8 focus:ring-primary"
                     {...field}
                   />
+                  <span className="absolute inset-y-0 right-3 flex items-center text-gray-500">₿</span>
                 </div>
               </FormControl>
             </FormItem>
