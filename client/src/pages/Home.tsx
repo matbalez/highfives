@@ -10,9 +10,9 @@ export default function Home() {
   return (
     <main className="container mx-auto px-4 py-6 max-w-3xl flex-1">
       <Tabs defaultValue="send" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="send" className="font-futura font-bold">Send High Five</TabsTrigger>
-          <TabsTrigger value="list" className="font-futura font-bold">All High Fives</TabsTrigger>
+        <TabsList className="flex justify-center w-full mb-6 bg-transparent p-0 gap-8">
+          <TabsTrigger value="send" className="font-futura text-lg bg-transparent link-tab">Send High Five</TabsTrigger>
+          <TabsTrigger value="list" className="font-futura text-lg bg-transparent link-tab">All High Fives</TabsTrigger>
         </TabsList>
         
         <TabsContent value="send" className="space-y-6">
