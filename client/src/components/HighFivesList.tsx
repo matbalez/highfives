@@ -26,13 +26,15 @@ export default function HighFivesList() {
         {Array.from({ length: 3 }).map((_, index) => (
           <Card key={index} className="bg-white shadow-md">
             <CardContent className="p-5">
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-[70%] rounded" />
-                <Skeleton className="h-4 w-[80%] rounded" />
-                <Skeleton className="h-12 w-full rounded" />
+              <div className="space-y-4">
+                <div className="flex justify-between items-start">
+                  <Skeleton className="h-6 w-[40%] rounded" />
+                  <Skeleton className="h-4 w-[20%] rounded" />
+                </div>
+                <Skeleton className="h-16 w-full rounded" />
                 <div className="flex justify-between">
-                  <Skeleton className="h-4 w-[25%] rounded" />
-                  <Skeleton className="h-4 w-[15%] rounded" />
+                  <Skeleton className="h-5 w-[30%] rounded" />
+                  <Skeleton className="h-5 w-[25%] rounded" />
                 </div>
               </div>
             </CardContent>
@@ -71,14 +73,12 @@ export default function HighFivesList() {
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-medium text-gray-600">To:</p>
-                  <p className="text-xl font-bold mt-1">
-                    <span className="text-black">₿</span>{highFive.recipient}
+                  <p className="text-xl font-bold">
+                    {highFive.recipient}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Amount</p>
-                  <p className="text-lg font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
+                <div className="text-xs text-gray-400">
+                  {format(parseISO(highFive.createdAt), 'MMM d, yyyy')}
                 </div>
               </div>
               
@@ -88,16 +88,13 @@ export default function HighFivesList() {
               
               <div className="flex justify-between items-center">
                 <div>
-                  {highFive.sender && (
-                    <>
-                      <p className="text-sm text-gray-500">From</p>
-                      <p className="font-medium">{highFive.sender}</p>
-                    </>
-                  )}
+                  <p className="text-lg font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
                 </div>
-                <div className="text-xs text-gray-400">
-                  {format(parseISO(highFive.createdAt), 'MMM d, yyyy')}
-                </div>
+                {highFive.sender && (
+                  <div className="text-right">
+                    <p className="font-medium">From: {highFive.sender}</p>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
