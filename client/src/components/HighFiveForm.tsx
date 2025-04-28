@@ -122,7 +122,7 @@ export default function HighFiveForm() {
                       <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
                       <Input
                         placeholder="Enter a ₿tag"
-                        className="p-3 pl-8 focus:ring-primary"
+                        className="p-3 pl-8 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
                         {...field}
                       />
                     </div>
@@ -140,7 +140,7 @@ export default function HighFiveForm() {
                   <FormControl>
                     <Textarea
                       placeholder="Tell them (specifically!) what they did that made bitcoin better."
-                      className="p-3 focus:ring-primary"
+                      className="p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
                       rows={3}
                       {...field}
                     />
@@ -160,7 +160,7 @@ export default function HighFiveForm() {
                       <Input
                         type="text"
                         inputMode="numeric"
-                        className="p-3 pr-8 focus:ring-primary"
+                        className="p-3 pr-8 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
                         {...field}
                       />
                       <span className="absolute inset-y-0 right-3 flex items-center text-primary">₿</span>
@@ -179,7 +179,7 @@ export default function HighFiveForm() {
                   <FormControl>
                     <Input
                       placeholder="Your name or handle (Optional)"
-                      className="p-3 focus:ring-primary"
+                      className="p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
                       {...field}
                     />
                   </FormControl>
