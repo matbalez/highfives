@@ -96,11 +96,7 @@ export default function HighFivesList() {
                   )}
                 </div>
                 <div className="text-xs text-gray-400">
-                  {new Date(highFive.createdAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}
+                  {format(parseISO(highFive.createdAt), 'MMM d, yyyy')}
                 </div>
               </div>
             </div>
