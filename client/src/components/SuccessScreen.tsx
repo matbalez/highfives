@@ -64,15 +64,16 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                 <p className="italic text-gray-700 whitespace-pre-line">{highFive.reason}</p>
               </div>
               
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-gray-500">Amount</p>
                   <p className="text-xl font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
+                  <p className="text-xs text-gray-400 font-normal font-sans mt-1">
+                    {new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
+                  </p>
                 </div>
                 {highFive.sender && (
                   <div className="text-right">
-                    <p className="text-sm text-gray-500">From</p>
-                    <p className="font-medium">{highFive.sender}</p>
+                    <p className="font-medium">From: {highFive.sender}</p>
                   </div>
                 )}
               </div>

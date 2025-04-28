@@ -71,24 +71,22 @@ export default function HighFivesList() {
         <Card key={highFive.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
           <CardContent className="p-5">
             <div className="space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-xl font-bold">
-                    <span className="text-black">₿</span>{highFive.recipient}
-                  </p>
-                </div>
-                <div className="text-xs text-gray-400">
-                  {format(parseISO(highFive.createdAt), 'MMM d, yyyy')}
-                </div>
+              <div>
+                <p className="text-xl font-bold">
+                  <span className="text-black">₿</span>{highFive.recipient}
+                </p>
               </div>
               
               <div className="bg-gray-50 rounded-lg p-4 shadow-inner">
                 <p className="italic text-gray-700 whitespace-pre-line">{highFive.reason}</p>
               </div>
               
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <div>
                   <p className="text-lg font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
+                  <p className="text-xs text-gray-400 font-normal font-sans mt-1">
+                    {format(parseISO(highFive.createdAt), 'MMM d')}
+                  </p>
                 </div>
                 {highFive.sender && (
                   <div className="text-right">
