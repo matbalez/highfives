@@ -17,6 +17,7 @@ import { useStore } from "../lib/store.tsx";
 import { useToast } from "@/hooks/use-toast";
 import { HighFiveDetails } from "../lib/types";
 import SuccessScreen from "./SuccessScreen";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const formSchema = z.object({
   recipient: z.string().min(1, {
