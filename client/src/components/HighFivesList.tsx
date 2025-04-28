@@ -2,12 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { getQueryFn } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HighFiveDetails } from "@/lib/types";
+import { format, parseISO } from "date-fns";
+
+// Define the type for high fives from the server
+interface ServerHighFive {
+  id: number;
+  recipient: string;
+  reason: string;
+  amount: number;
+  sender: string | null;
+  createdAt: string;
+}
 
 export default function HighFivesList() {
   const { data: highFives, isLoading, error } = useQuery({
     queryKey: ['/api/high-fives'],
-    queryFn: getQueryFn<HighFiveDetails[]>({ on401: "returnNull" }),
+    queryFn: getQueryFn<ServerHighFive[]>({ on401: "returnNull" }),
   });
   
   if (isLoading) {
@@ -49,14 +59,14 @@ export default function HighFivesList() {
   }
 
   // Sort highFives in reverse chronological order (newest first)
-  // Don't need to sort by date yet as we don't have created_at field in our model
-  // Just reverse the array to show newest entries first
-  const sortedHighFives = [...highFives].reverse();
+  const sortedHighFives = [...highFives].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return (
     <div className="space-y-6 py-2">
-      {sortedHighFives.map((highFive, index) => (
-        <Card key={index} className="bg-white shadow-md hover:shadow-lg transition-shadow">
+      {sortedHighFives.map((highFive) => (
+        <Card key={highFive.id} className="bg-white shadow-md hover:shadow-lg transition-shadow">
           <CardContent className="p-5">
             <div className="space-y-4">
               <div className="flex justify-between items-start">
@@ -77,14 +87,21 @@ export default function HighFivesList() {
               </div>
               
               <div className="flex justify-between items-center">
-                {highFive.sender ? (
-                  <div>
-                    <p className="text-sm text-gray-500">From</p>
-                    <p className="font-medium">{highFive.sender}</p>
-                  </div>
-                ) : (
-                  <div></div>
-                )}
+                <div>
+                  {highFive.sender && (
+                    <>
+                      <p className="text-sm text-gray-500">From</p>
+                      <p className="font-medium">{highFive.sender}</p>
+                    </>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {new Date(highFive.createdAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </div>
               </div>
             </div>
           </CardContent>

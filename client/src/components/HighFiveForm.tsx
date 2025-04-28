@@ -48,7 +48,7 @@ export default function HighFiveForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     // Check if user has enough bitcoins
     if (values.amount > bitcoinBalance) {
       toast({
@@ -59,16 +59,40 @@ export default function HighFiveForm() {
       return;
     }
 
-    // Deduct from balance
-    setBitcoinBalance(bitcoinBalance - values.amount);
+    try {
+      // Send to API
+      await apiRequest(
+        'POST',
+        '/api/high-fives', 
+        {
+          recipient: values.recipient,
+          reason: values.reason,
+          amount: values.amount,
+          sender: values.sender || undefined,
+        }
+      );
 
-    // Show success screen with details
-    setSuccessDetails({
-      recipient: values.recipient,
-      reason: values.reason,
-      amount: values.amount,
-      sender: values.sender || undefined,
-    });
+      // Invalidate the high fives query cache
+      queryClient.invalidateQueries({ queryKey: ['/api/high-fives'] });
+
+      // Deduct from balance
+      setBitcoinBalance(bitcoinBalance - values.amount);
+
+      // Show success screen with details
+      setSuccessDetails({
+        recipient: values.recipient,
+        reason: values.reason,
+        amount: values.amount,
+        sender: values.sender || undefined,
+      });
+    } catch (error) {
+      console.error("Error submitting high five:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send your High Five. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
   
   const closeSuccessScreen = () => {
