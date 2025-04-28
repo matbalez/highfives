@@ -83,7 +83,7 @@ export default function HighFivesList() {
               </div>
               
               <div className="bg-gray-50 rounded-lg p-4 shadow-inner">
-                <p className="italic text-gray-700">{highFive.reason}</p>
+                <p className="italic text-gray-700 whitespace-pre-line">{highFive.reason}</p>
               </div>
               
               <div className="flex justify-between items-center">

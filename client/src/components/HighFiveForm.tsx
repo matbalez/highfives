@@ -60,13 +60,16 @@ export default function HighFiveForm() {
     }
 
     try {
+      // Append two line breaks and high five emojis to the reason
+      const enhancedReason = `${values.reason}\n\n✋✋✋`;
+      
       // Send to API
       await apiRequest(
         'POST',
         '/api/high-fives', 
         {
           recipient: values.recipient,
-          reason: values.reason,
+          reason: enhancedReason,
           amount: values.amount,
           sender: values.sender || undefined,
         }
@@ -81,7 +84,7 @@ export default function HighFiveForm() {
       // Show success screen with details
       setSuccessDetails({
         recipient: values.recipient,
-        reason: values.reason,
+        reason: enhancedReason,
         amount: values.amount,
         sender: values.sender || undefined,
       });
