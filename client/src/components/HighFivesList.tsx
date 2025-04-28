@@ -74,7 +74,7 @@ export default function HighFivesList() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-xl font-bold">
-                    {highFive.recipient}
+                    <span className="text-black">₿</span>{highFive.recipient}
                   </p>
                 </div>
                 <div className="text-xs text-gray-400">
