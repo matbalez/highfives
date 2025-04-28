@@ -154,7 +154,10 @@ export default function HighFiveForm() {
               name="amount"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold text-lg">Bonus - in bitcoins (aka satoshis)</FormLabel>
+                  <FormLabel className="font-futura font-bold text-lg">
+                    <span className="text-black">Bonus</span>
+                    <span className="text-gray-400 font-normal"> (in bitcoins aka satoshis)</span>
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Input
