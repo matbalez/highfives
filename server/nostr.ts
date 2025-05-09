@@ -1,4 +1,10 @@
 import { SimplePool, getEventHash, getPublicKey, finalizeEvent, nip19, type Event } from 'nostr-tools';
+import WebSocket from 'ws';
+
+// Setup WebSocket for Node environment
+if (typeof global !== 'undefined') {
+  (global as any).WebSocket = WebSocket;
+}
 
 const NOSTR_RELAYS = [
   'wss://relay.damus.io',
