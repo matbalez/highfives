@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { HighFiveDetails } from "../lib/types";
 import SuccessScreen from "./SuccessScreen";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { nostrService } from "@/lib/nostr";
 
 const formSchema = z.object({
   recipient: z.string().min(1, {
@@ -34,9 +35,10 @@ const formSchema = z.object({
 });
 
 export default function HighFiveForm() {
-  const { bitcoinBalance, setBitcoinBalance } = useStore();
+  const { bitcoinBalance, setBitcoinBalance, nostrConfigured } = useStore();
   const { toast } = useToast();
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
+  const [publishingToNostr, setPublishingToNostr] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,16 +65,19 @@ export default function HighFiveForm() {
       // Append two line breaks and high five emojis to the reason
       const enhancedReason = `${values.reason}\n\n✋✋✋`;
       
+      // Create highFive object with details
+      const highFiveDetails = {
+        recipient: values.recipient,
+        reason: enhancedReason,
+        amount: values.amount,
+        sender: values.sender || undefined,
+      };
+      
       // Send to API
       await apiRequest(
         'POST',
         '/api/high-fives', 
-        {
-          recipient: values.recipient,
-          reason: enhancedReason,
-          amount: values.amount,
-          sender: values.sender || undefined,
-        }
+        highFiveDetails
       );
 
       // Invalidate the high fives query cache
@@ -80,14 +85,39 @@ export default function HighFiveForm() {
 
       // Deduct from balance
       setBitcoinBalance(bitcoinBalance - values.amount);
+      
+      // If Nostr is configured, publish to Nostr
+      if (nostrConfigured) {
+        setPublishingToNostr(true);
+        try {
+          const published = await nostrService.publishHighFive(highFiveDetails);
+          if (published) {
+            toast({
+              title: "Published to Nostr",
+              description: "Your High Five was successfully published to Nostr!",
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "Nostr Publishing Warning",
+              description: "Your High Five was saved, but we couldn't publish it to Nostr. It will be retried later.",
+              variant: "default",
+            });
+          }
+        } catch (nostrError) {
+          console.error("Error publishing to Nostr:", nostrError);
+          toast({
+            title: "Nostr Publishing Failed",
+            description: "Your High Five was saved, but we couldn't publish it to Nostr. It will be retried later.",
+            variant: "default",
+          });
+        } finally {
+          setPublishingToNostr(false);
+        }
+      }
 
       // Show success screen with details
-      setSuccessDetails({
-        recipient: values.recipient,
-        reason: enhancedReason,
-        amount: values.amount,
-        sender: values.sender || undefined,
-      });
+      setSuccessDetails(highFiveDetails);
     } catch (error) {
       console.error("Error submitting high five:", error);
       toast({
