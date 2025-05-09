@@ -20,13 +20,6 @@ export default function Home() {
           <div className="mb-8 max-w-md mx-auto">
             <HighFiveForm />
           </div>
-
-          {/* Promotion */}
-          <div className="bg-secondary p-4 rounded-lg text-center max-w-md mx-auto">
-            <p className="font-futura">
-              Every day we will pick the best High Five we've seen and make it a High Ten—by doubling the amount.
-            </p>
-          </div>
         </TabsContent>
         
         <TabsContent value="list">
