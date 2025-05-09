@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { initializeNostr, nostrService } from "./nostr";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 interface StoreContextType {
   bitcoinBalance: number;
@@ -7,8 +6,6 @@ interface StoreContextType {
   notificationVisible: boolean;
   showNotification: () => void;
   hideNotification: () => void;
-  nostrConfigured: boolean;
-  configureNostr: (nsecKey: string) => boolean;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -16,7 +13,6 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [bitcoinBalance, setBitcoinBalance] = useState<number>(1000000);
   const [notificationVisible, setNotificationVisible] = useState<boolean>(false);
-  const [nostrConfigured, setNostrConfigured] = useState<boolean>(false);
 
   const showNotification = () => {
     setNotificationVisible(true);
@@ -26,33 +22,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     setNotificationVisible(false);
   };
 
-  const configureNostr = (nsecKey: string) => {
-    const success = initializeNostr(nsecKey);
-    if (success) {
-      setNostrConfigured(true);
-      // Store the configured state in localStorage for persistence across page refreshes
-      localStorage.setItem("nostrConfigured", "true");
-      // Note: We don't store the actual key for security reasons
-    }
-    return success;
-  };
-
-  // Check if Nostr was previously configured
-  useEffect(() => {
-    const wasConfigured = localStorage.getItem("nostrConfigured") === "true";
-    setNostrConfigured(wasConfigured);
-    
-    // Connect to relays if configured
-    if (wasConfigured) {
-      nostrService.connectToAllRelays();
-    }
-    
-    // Cleanup: disconnect from relays when component unmounts
-    return () => {
-      nostrService.disconnectFromAllRelays();
-    };
-  }, []);
-
   return (
     <StoreContext.Provider
       value={{
@@ -60,9 +29,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         setBitcoinBalance,
         notificationVisible,
         showNotification,
-        hideNotification,
-        nostrConfigured,
-        configureNostr
+        hideNotification
       }}
     >
       {children}
