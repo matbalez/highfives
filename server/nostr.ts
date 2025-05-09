@@ -1,4 +1,4 @@
-import { SimplePool, getEventHash, getPublicKey, finalizeEvent, type Event } from 'nostr-tools';
+import { SimplePool, getEventHash, getPublicKey, finalizeEvent, nip19, type Event } from 'nostr-tools';
 
 const NOSTR_RELAYS = [
   'wss://relay.damus.io',
@@ -9,12 +9,6 @@ const NOSTR_RELAYS = [
 // Initialize Nostr connection pool
 const pool = new SimplePool();
 
-// Get the private key from environment variables
-const privateKey = process.env.NOSTR_PRIVATE_KEY;
-if (!privateKey) {
-  console.error('NOSTR_PRIVATE_KEY is not set in environment variables');
-}
-
 // Create high five note and publish to Nostr
 export async function publishHighFiveToNostr(highFive: {
   recipient: string;
@@ -23,17 +17,27 @@ export async function publishHighFiveToNostr(highFive: {
   sender?: string;
 }): Promise<void> {
   try {
-    if (!privateKey) {
+    // Get the private key from environment variables
+    const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
+    if (!privateKeyHex) {
       console.error('Cannot publish to Nostr: NOSTR_PRIVATE_KEY is not set');
       return;
     }
 
-    // Convert privateKey from hex string to Uint8Array if needed
-    const privateKeyBytes = typeof privateKey === 'string' 
-      ? new Uint8Array(Buffer.from(privateKey, 'hex')) 
-      : privateKey;
-    
-    const publicKey = getPublicKey(privateKeyBytes);
+    // Handle nsec format if needed
+    let hexKey = privateKeyHex;
+    if (privateKeyHex.startsWith('nsec')) {
+      try {
+        const { data } = nip19.decode(privateKeyHex);
+        hexKey = data as string;
+      } catch (e) {
+        console.error('Invalid nsec key:', e);
+        return;
+      }
+    }
+
+    // Get public key from private key
+    const publicKey = getPublicKey(hexKey);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
     // Format the content of the Nostr note
@@ -55,11 +59,16 @@ export async function publishHighFiveToNostr(highFive: {
 
     // Add recipient tag if it looks like a npub
     if (highFive.recipient.startsWith('npub')) {
-      unsignedEvent.tags.push(['p', highFive.recipient]);
+      try {
+        const { data } = nip19.decode(highFive.recipient);
+        unsignedEvent.tags.push(['p', data as string]);
+      } catch (e) {
+        console.error('Invalid npub recipient:', e);
+      }
     }
 
     // Finalize the event (sign it)
-    const signedEvent = finalizeEvent(unsignedEvent, privateKeyBytes);
+    const signedEvent = finalizeEvent(unsignedEvent, hexKey);
 
     // Publish to all configured relays
     const pubs = pool.publish(NOSTR_RELAYS, signedEvent);

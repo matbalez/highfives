@@ -23,8 +23,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       publishHighFiveToNostr({
         recipient: validation.data.recipient,
         reason: validation.data.reason,
-        amount: validation.data.amount,
-        sender: validation.data.sender
+        amount: Number(validation.data.amount),
+        sender: validation.data.sender || undefined
       }).catch(error => {
         // Log error but don't affect the main flow
         console.error('Error publishing to Nostr (non-blocking):', error);
