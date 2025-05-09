@@ -8,7 +8,10 @@ export default function Header() {
         <div className="logo">
           <img src={highFivesLogo} alt="High Fives Logo" className="h-12" />
         </div>
-        <Button variant="default" className="font-futura font-bold">
+        <Button 
+          variant="outline" 
+          className="font-futura font-bold text-black bg-white border-2 border-primary hover:bg-white/90"
+        >
           Sign In
         </Button>
       </div>
