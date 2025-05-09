@@ -18,6 +18,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const highFive = await storage.createHighFive(validation.data);
+      
+      // Silently publish to Nostr without blocking the response
+      publishHighFiveToNostr({
+        recipient: validation.data.recipient,
+        reason: validation.data.reason,
+        amount: validation.data.amount,
+        sender: validation.data.sender
+      }).catch(error => {
+        // Log error but don't affect the main flow
+        console.error('Error publishing to Nostr (non-blocking):', error);
+      });
+      
       return res.status(201).json(highFive);
     } catch (error) {
       console.error("Error creating high five:", error);

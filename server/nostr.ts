@@ -28,7 +28,12 @@ export async function publishHighFiveToNostr(highFive: {
       return;
     }
 
-    const publicKey = getPublicKey(privateKey);
+    // Convert privateKey from hex string to Uint8Array if needed
+    const privateKeyBytes = typeof privateKey === 'string' 
+      ? new Uint8Array(Buffer.from(privateKey, 'hex')) 
+      : privateKey;
+    
+    const publicKey = getPublicKey(privateKeyBytes);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
     // Format the content of the Nostr note
@@ -54,7 +59,7 @@ export async function publishHighFiveToNostr(highFive: {
     }
 
     // Finalize the event (sign it)
-    const signedEvent = finalizeEvent(unsignedEvent, privateKey);
+    const signedEvent = finalizeEvent(unsignedEvent, privateKeyBytes);
 
     // Publish to all configured relays
     const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
