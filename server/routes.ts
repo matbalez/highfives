@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertHighFiveSchema } from "@shared/schema";
+import { publishHighFiveToNostr } from "./nostr";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for high fives
