@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { StoreProvider } from "./lib/store.tsx";
 
 function Router() {
@@ -26,6 +27,7 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <Router />
+            <Footer />
           </div>
         </TooltipProvider>
       </StoreProvider>
