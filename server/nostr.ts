@@ -1,6 +1,7 @@
 import { SimplePool, getEventHash, getPublicKey, finalizeEvent, nip19, type Event } from 'nostr-tools';
 import WebSocket from 'ws';
 import { generateQRCodeDataURL } from './qrcode-util';
+import * as QRCode from 'qrcode';
 
 // Setup WebSocket for Node environment
 if (typeof global !== 'undefined') {
@@ -49,12 +50,38 @@ export async function publishHighFiveToNostr(highFive: {
     const publicKey = getPublicKey(hexKey as unknown as Uint8Array);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
-    // Format content based on available data
-    const content = formatHighFiveContent(highFive);
+    // Generate QR code as base64 data URL if lightning invoice is available
+    let qrCodeBase64 = '';
+    if (highFive.lightningInvoice) {
+      try {
+        // Generate QR code as data URL and extract the base64 part
+        qrCodeBase64 = await QRCode.toDataURL(highFive.lightningInvoice, {
+          type: 'image/png',
+          errorCorrectionLevel: 'H',
+          margin: 1,
+          width: 300,
+          color: {
+            dark: '#000000',
+            light: '#ffffff'
+          }
+        });
+        console.log('QR code generated successfully');
+      } catch (e) {
+        console.error('Failed to generate QR code:', e);
+      }
+    }
+
+    // Determine event kind based on whether we have an image
+    const kind = 1; // Regular note
+
+    // Create the content with or without the QR code
+    const content = qrCodeBase64 
+      ? formatHighFiveContentWithImage(highFive, qrCodeBase64) 
+      : formatHighFiveContent(highFive);
     
     // Create an unsigned event
     const unsignedEvent: Event = {
-      kind: 1, // Regular note
+      kind,
       pubkey: publicKey,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
@@ -76,13 +103,6 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // If we have a QR code URL, add it as an image tag
-    if (highFive.qrCodeUrl) {
-      // Add as image URL using 'r' tag per Nostr recommendations
-      unsignedEvent.tags.push(['r', highFive.qrCodeUrl, 'image/png']);
-      console.log(`Added QR code URL to Nostr post: ${highFive.qrCodeUrl}`);
-    }
-
     // Finalize the event (sign it)
     const signedEvent = finalizeEvent(unsignedEvent, hexKey as unknown as Uint8Array);
 
@@ -99,14 +119,13 @@ export async function publishHighFiveToNostr(highFive: {
   }
 }
 
-// Format high five content
+// Basic high five content without image
 function formatHighFiveContent(
   highFive: {
     recipient: string;
     reason: string;
     amount: number;
     sender?: string;
-    qrCodeUrl?: string;
   }
 ): string {
   // Basic content
@@ -117,17 +136,40 @@ function formatHighFiveContent(
     '',
     highFive.reason,
     '',
+    'Scan the QR code to send Bitcoin:',
+    '',
+    '#highfives'
   ];
 
-  // Add instructions for QR code if available
-  if (highFive.qrCodeUrl) {
-    parts.push('');
-    parts.push('Scan the QR code to send Bitcoin:');
-  }
+  return parts.join('\n');
+}
 
-  // Add hashtag
-  parts.push('');
-  parts.push('#highfives');
+// Format content with embedded base64 image using Markdown format
+// Most Nostr clients render markdown and will display the image inline
+function formatHighFiveContentWithImage(
+  highFive: {
+    recipient: string;
+    reason: string;
+    amount: number;
+    sender?: string;
+  },
+  qrCodeBase64: string
+): string {
+  // Basic content
+  const parts = [
+    `🖐️ High Five of ${highFive.amount} sats`,
+    `To: ${highFive.recipient}`,
+    highFive.sender ? `From: ${highFive.sender}` : 'From: Anonymous',
+    '',
+    highFive.reason,
+    '',
+    'Scan this QR code to send Bitcoin:',
+    '',
+    // Embed the image directly using Markdown image format
+    `![QR Code](${qrCodeBase64})`,
+    '',
+    '#highfives'
+  ];
 
   return parts.join('\n');
 }

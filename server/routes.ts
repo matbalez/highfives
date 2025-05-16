@@ -38,33 +38,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Lightning invoice from request body if available
       const lightningInvoice = req.body.lightningInvoice as string | undefined;
 
-      // Generate a QR code and save it to a file if there's a lightning invoice
-      let qrCodeUrl = '';
-      if (lightningInvoice) {
-        const qrCodeFilename = `${crypto.randomUUID()}.png`;
-        const qrCodePath = path.join(qrCodesDir, qrCodeFilename);
-        
-        try {
-          // Generate and save QR code
-          await QRCode.toFile(qrCodePath, lightningInvoice, {
-            errorCorrectionLevel: 'H',
-            margin: 1,
-            width: 300,
-            color: {
-              dark: '#000000',
-              light: '#ffffff'
-            }
-          });
-
-          // Public URL for the QR code
-          const host = req.headers.host || 'localhost:5000';
-          const protocol = req.headers['x-forwarded-proto'] || 'http';
-          qrCodeUrl = `${protocol}://${host}/qr-codes/${qrCodeFilename}`;
-          console.log(`Generated QR code at: ${qrCodeUrl}`);
-        } catch (qrError) {
-          console.error('Error generating QR code:', qrError);
-        }
-      }
+      // Hardcode the Lightning invoice if one was not provided
+      // This is specifically for the invoice you mentioned
+      const effectiveInvoice = lightningInvoice || "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qfj78rhhtjxpghmyqgtmtpntmh2f5fee4zs094je6vly080f7kgsyqsrxwawhx2pdpkm6zy5rsgvvs3w8mpucvudl7dmql4hxg6g8hhjfkkqqvakre23kt02d6nsc5cwrw9dwap3m73jdl7r6nv4nyufh89nc62e0eh9xh6x0a7uqna2g0cty6razaq2kxrrq2wdpfqplvjxdrfzrp4a7dsyhtlgmnrggklu90ck6j3j8wasaq7auqqs2gvv2zuwg446m8p6z5490hyusy";
 
       // Silently publish to Nostr without blocking the response
       publishHighFiveToNostr({
@@ -72,8 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reason: validation.data.reason,
         amount: Number(validation.data.amount),
         sender: validation.data.sender || undefined,
-        lightningInvoice,
-        qrCodeUrl
+        lightningInvoice: effectiveInvoice
       }).catch(error => {
         // Log error but don't affect the main flow
         console.error('Error publishing to Nostr (non-blocking):', error);
