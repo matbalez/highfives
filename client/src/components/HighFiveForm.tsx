@@ -80,11 +80,8 @@ export default function HighFiveForm() {
     if (!pendingHighFive) return;
     
     try {
-      // Add QR code to the reason if available
-      let enhancedReason = pendingHighFive.reason;
-      if (qrCodeDataUrl) {
-        enhancedReason = `${pendingHighFive.reason}\n\n![Payment QR](${qrCodeDataUrl})`;
-      }
+      // Use the original reason without trying to embed the QR code
+      const enhancedReason = pendingHighFive.reason;
       
       // Send to API
       await apiRequest(
