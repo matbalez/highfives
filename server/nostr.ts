@@ -1,5 +1,6 @@
 import { SimplePool, getEventHash, getPublicKey, finalizeEvent, nip19, type Event } from 'nostr-tools';
 import WebSocket from 'ws';
+import { generateQRCodeDataURL } from './qrcode-util';
 
 // Setup WebSocket for Node environment
 if (typeof global !== 'undefined') {
@@ -47,10 +48,19 @@ export async function publishHighFiveToNostr(highFive: {
     const publicKey = getPublicKey(hexKey);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
-    // Format the content of the Nostr note
-    const content = highFive.lightningInvoice 
-      ? formatContentWithLightningInvoice(highFive) 
-      : formatHighFiveContent(highFive);
+    // Generate QR code if lightning invoice is available
+    let qrCodeDataURL = '';
+    if (highFive.lightningInvoice) {
+      try {
+        qrCodeDataURL = await generateQRCodeDataURL(highFive.lightningInvoice);
+        console.log('QR code generated successfully');
+      } catch (e) {
+        console.error('Failed to generate QR code:', e);
+      }
+    }
+
+    // Format content based on available data
+    const content = formatHighFiveContent(highFive, qrCodeDataURL);
     
     // Create an unsigned event
     const unsignedEvent: Event = {
@@ -76,6 +86,11 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
+    // If we have a QR code, add it as an image tag (NIP-94)
+    if (qrCodeDataURL) {
+      unsignedEvent.tags.push(['image', qrCodeDataURL]);
+    }
+
     // Finalize the event (sign it)
     const signedEvent = finalizeEvent(unsignedEvent, hexKey);
 
@@ -92,12 +107,17 @@ export async function publishHighFiveToNostr(highFive: {
   }
 }
 
-function formatHighFiveContent(highFive: {
-  recipient: string;
-  reason: string;
-  amount: number;
-  sender?: string;
-}): string {
+// Format high five content, possibly including QR code
+function formatHighFiveContent(
+  highFive: {
+    recipient: string;
+    reason: string;
+    amount: number;
+    sender?: string;
+  },
+  qrCodeDataURL?: string
+): string {
+  // Basic content
   const parts = [
     `🖐️ High Five of ${highFive.amount} sats`,
     `To: ${highFive.recipient}`,
@@ -105,42 +125,17 @@ function formatHighFiveContent(highFive: {
     '',
     highFive.reason,
     '',
-    '#highfives'
   ];
 
-  return parts.join('\n');
-}
-
-// Format content with Lightning invoice for Nostr clients to display as QR code
-function formatContentWithLightningInvoice(highFive: {
-  recipient: string;
-  reason: string;
-  amount: number;
-  sender?: string;
-  lightningInvoice?: string;
-}): string {
-  // Basic content without Lightning invoice
-  const basicContent = [
-    `🖐️ High Five of ${highFive.amount} sats`,
-    `To: ${highFive.recipient}`,
-    highFive.sender ? `From: ${highFive.sender}` : 'From: Anonymous',
-    '',
-    highFive.reason,
-    '',
-  ];
-
-  // Add Lightning invoice if available - Nostr clients recognize this format
-  if (highFive.lightningInvoice) {
-    basicContent.push('');
-    basicContent.push('Scan this QR code to send Bitcoin:');
-    basicContent.push('');
-    // Many Nostr clients will render lightning: prefixed text as QR codes automatically
-    basicContent.push(`lightning:${highFive.lightningInvoice}`);
+  // Add instructions for QR code if available
+  if (qrCodeDataURL) {
+    parts.push('');
+    parts.push('Scan the QR code to send Bitcoin');
   }
 
   // Add hashtag
-  basicContent.push('');
-  basicContent.push('#highfives');
+  parts.push('');
+  parts.push('#highfives');
 
-  return basicContent.join('\n');
+  return parts.join('\n');
 }
