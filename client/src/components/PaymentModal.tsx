@@ -23,29 +23,9 @@ export default function PaymentModal({
   const qrCodeRef = React.useRef<HTMLDivElement>(null);
 
   const handleConfirmPayment = () => {
-    if (qrCodeRef.current) {
-      // Get QR code as data URL to include in the Nostr post
-      const svgElement = qrCodeRef.current.querySelector("svg");
-      if (svgElement) {
-        const serializer = new XMLSerializer();
-        const svgStr = serializer.serializeToString(svgElement);
-        const svgBlob = new Blob([svgStr], { type: "image/svg+xml" });
-        const reader = new FileReader();
-        
-        reader.onload = () => {
-          if (reader.result) {
-            onConfirmPayment(reader.result.toString());
-          }
-        };
-        
-        reader.readAsDataURL(svgBlob);
-      } else {
-        // If we can't get the QR code image, just proceed with the high five
-        onConfirmPayment("");
-      }
-    } else {
-      onConfirmPayment("");
-    }
+    // Instead of trying to send the image data, just send the Lightning invoice
+    // The server can create its own QR code or include the invoice directly
+    onConfirmPayment(LIGHTNING_INVOICE);
   };
 
   return (

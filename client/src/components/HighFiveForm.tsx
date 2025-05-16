@@ -76,17 +76,14 @@ export default function HighFiveForm() {
     setPaymentModalOpen(true);
   }
 
-  async function sendHighFive(qrCodeDataUrl: string) {
+  async function sendHighFive(lightningInvoice: string) {
     if (!pendingHighFive) return;
     
     try {
-      // Add QR code to the reason if available
-      let enhancedReason = pendingHighFive.reason;
-      if (qrCodeDataUrl) {
-        enhancedReason = `${pendingHighFive.reason}\n\n![Payment QR](${qrCodeDataUrl})`;
-      }
+      // Use the original reason, we'll pass the lightning invoice separately
+      const enhancedReason = pendingHighFive.reason;
       
-      // Send to API
+      // Send to API with lightning invoice
       await apiRequest(
         'POST',
         '/api/high-fives', 
@@ -95,6 +92,7 @@ export default function HighFiveForm() {
           reason: enhancedReason,
           amount: pendingHighFive.amount,
           sender: pendingHighFive.sender,
+          lightningInvoice: lightningInvoice // Pass lightning invoice separately
         }
       );
 

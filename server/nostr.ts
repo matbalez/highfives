@@ -21,6 +21,7 @@ export async function publishHighFiveToNostr(highFive: {
   reason: string;
   amount: number;
   sender?: string;
+  qrCodeDataUrl?: string;
 }): Promise<void> {
   try {
     // Get the private key from environment variables
@@ -49,16 +50,19 @@ export async function publishHighFiveToNostr(highFive: {
     // Format the content of the Nostr note
     const content = formatHighFiveContent(highFive);
 
+    // Determine what kind of note to publish based on QR code
+    const kind = highFive.qrCodeDataUrl ? 1 : 1; // Use kind 1 for now (regular note)
+    
     // Create an unsigned event
     const unsignedEvent: Event = {
-      kind: 1, // Regular note
+      kind,
       pubkey: publicKey,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
         ['t', 'highfive'], // Tag for filtering/indexing
         ['amount', highFive.amount.toString()]
       ],
-      content,
+      content: highFive.qrCodeDataUrl ? formatContentWithQRCode(highFive) : content,
       id: '',
       sig: '',
     };
@@ -106,4 +110,39 @@ function formatHighFiveContent(highFive: {
   ];
 
   return parts.join('\n');
+}
+
+// Format content with QR code included using Nostr's native image embedding
+function formatContentWithQRCode(highFive: {
+  recipient: string;
+  reason: string;
+  amount: number;
+  sender?: string;
+  qrCodeDataUrl?: string;
+}): string {
+  // Basic content without QR code
+  const basicContent = [
+    `🖐️ High Five of ${highFive.amount} sats`,
+    `To: ${highFive.recipient}`,
+    highFive.sender ? `From: ${highFive.sender}` : 'From: Anonymous',
+    '',
+    highFive.reason,
+    '',
+  ];
+
+  // Add QR code information if available
+  if (highFive.qrCodeDataUrl) {
+    // In Nostr, to embed an image correctly, clients expect the raw URL
+    // For data URLs, we include them directly in the content
+    basicContent.push('');
+    basicContent.push('Scan this QR code to send Bitcoin:');
+    basicContent.push('');
+    basicContent.push(highFive.qrCodeDataUrl);
+  }
+
+  // Add hashtag
+  basicContent.push('');
+  basicContent.push('#highfives');
+
+  return basicContent.join('\n');
 }
