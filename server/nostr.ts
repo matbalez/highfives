@@ -76,20 +76,10 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // If we have a QR code URL, add it as both image and URL tags for better compatibility
+    // If we have a QR code URL, add it as an image tag
     if (highFive.qrCodeUrl) {
-      // Add URL tag for linking
-      unsignedEvent.tags.push(['url', highFive.qrCodeUrl]);
-      
-      // Add media tag (NIP-94)
-      unsignedEvent.tags.push(['media', highFive.qrCodeUrl, 'image/png']);
-      
-      // Add image tag for older clients
-      unsignedEvent.tags.push(['image', highFive.qrCodeUrl]);
-
-      // Add r tag as fallback
+      // Add as image URL using 'r' tag per Nostr recommendations
       unsignedEvent.tags.push(['r', highFive.qrCodeUrl, 'image/png']);
-      
       console.log(`Added QR code URL to Nostr post: ${highFive.qrCodeUrl}`);
     }
 
@@ -133,8 +123,6 @@ function formatHighFiveContent(
   if (highFive.qrCodeUrl) {
     parts.push('');
     parts.push('Scan the QR code to send Bitcoin:');
-    parts.push('');
-    parts.push(`QR Code: ${highFive.qrCodeUrl}`);
   }
 
   // Add hashtag
