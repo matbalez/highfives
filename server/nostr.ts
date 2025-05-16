@@ -23,6 +23,7 @@ export async function publishHighFiveToNostr(highFive: {
   amount: number;
   sender?: string;
   lightningInvoice?: string;
+  qrCodeUrl?: string;
 }): Promise<void> {
   try {
     // Get the private key from environment variables
@@ -45,22 +46,11 @@ export async function publishHighFiveToNostr(highFive: {
     }
 
     // Get public key from private key
-    const publicKey = getPublicKey(hexKey);
+    const publicKey = getPublicKey(hexKey as unknown as Uint8Array);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
-    // Generate QR code if lightning invoice is available
-    let qrCodeDataURL = '';
-    if (highFive.lightningInvoice) {
-      try {
-        qrCodeDataURL = await generateQRCodeDataURL(highFive.lightningInvoice);
-        console.log('QR code generated successfully');
-      } catch (e) {
-        console.error('Failed to generate QR code:', e);
-      }
-    }
-
     // Format content based on available data
-    const content = formatHighFiveContent(highFive, qrCodeDataURL);
+    const content = formatHighFiveContent(highFive);
     
     // Create an unsigned event
     const unsignedEvent: Event = {
@@ -86,13 +76,15 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // If we have a QR code, add it as an image tag (NIP-94)
-    if (qrCodeDataURL) {
-      unsignedEvent.tags.push(['image', qrCodeDataURL]);
+    // If we have a QR code URL, add it as an image tag
+    if (highFive.qrCodeUrl) {
+      // Add as image URL using 'r' tag per Nostr recommendations
+      unsignedEvent.tags.push(['r', highFive.qrCodeUrl, 'image/png']);
+      console.log(`Added QR code URL to Nostr post: ${highFive.qrCodeUrl}`);
     }
 
     // Finalize the event (sign it)
-    const signedEvent = finalizeEvent(unsignedEvent, hexKey);
+    const signedEvent = finalizeEvent(unsignedEvent, hexKey as unknown as Uint8Array);
 
     // Publish to all configured relays
     const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
@@ -107,15 +99,15 @@ export async function publishHighFiveToNostr(highFive: {
   }
 }
 
-// Format high five content, possibly including QR code
+// Format high five content
 function formatHighFiveContent(
   highFive: {
     recipient: string;
     reason: string;
     amount: number;
     sender?: string;
-  },
-  qrCodeDataURL?: string
+    qrCodeUrl?: string;
+  }
 ): string {
   // Basic content
   const parts = [
@@ -128,9 +120,9 @@ function formatHighFiveContent(
   ];
 
   // Add instructions for QR code if available
-  if (qrCodeDataURL) {
+  if (highFive.qrCodeUrl) {
     parts.push('');
-    parts.push('Scan the QR code to send Bitcoin');
+    parts.push('Scan the QR code to send Bitcoin:');
   }
 
   // Add hashtag
