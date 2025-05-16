@@ -17,6 +17,7 @@ import { useStore } from "../lib/store.tsx";
 import { useToast } from "@/hooks/use-toast";
 import { HighFiveDetails } from "../lib/types";
 import SuccessScreen from "./SuccessScreen";
+import PaymentModal from "./PaymentModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 const formSchema = z.object({
@@ -37,6 +38,8 @@ export default function HighFiveForm() {
   const { bitcoinBalance, setBitcoinBalance } = useStore();
   const { toast } = useToast();
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [pendingHighFive, setPendingHighFive] = useState<HighFiveDetails | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,7 +51,7 @@ export default function HighFiveForm() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  function handleFormSubmit(values: z.infer<typeof formSchema>) {
     // Check if user has enough bitcoins
     if (values.amount > bitcoinBalance) {
       toast({
@@ -59,19 +62,40 @@ export default function HighFiveForm() {
       return;
     }
 
+    // Append two line breaks and high five emojis to the reason
+    const enhancedReason = `${values.reason}\n\n✋✋✋`;
+    
+    // Store the high five details and show payment modal
+    setPendingHighFive({
+      recipient: values.recipient,
+      reason: enhancedReason,
+      amount: values.amount,
+      sender: values.sender || undefined,
+    });
+    
+    // Open payment modal
+    setPaymentModalOpen(true);
+  }
+
+  async function sendHighFive(qrCodeDataUrl: string) {
+    if (!pendingHighFive) return;
+    
     try {
-      // Append two line breaks and high five emojis to the reason
-      const enhancedReason = `${values.reason}\n\n✋✋✋`;
+      // Add QR code to the reason if available
+      let enhancedReason = pendingHighFive.reason;
+      if (qrCodeDataUrl) {
+        enhancedReason = `${pendingHighFive.reason}\n\n![Payment QR](${qrCodeDataUrl})`;
+      }
       
       // Send to API
       await apiRequest(
         'POST',
         '/api/high-fives', 
         {
-          recipient: values.recipient,
+          recipient: pendingHighFive.recipient,
           reason: enhancedReason,
-          amount: values.amount,
-          sender: values.sender || undefined,
+          amount: pendingHighFive.amount,
+          sender: pendingHighFive.sender,
         }
       );
 
@@ -79,15 +103,16 @@ export default function HighFiveForm() {
       queryClient.invalidateQueries({ queryKey: ['/api/high-fives'] });
 
       // Deduct from balance
-      setBitcoinBalance(bitcoinBalance - values.amount);
+      setBitcoinBalance(bitcoinBalance - pendingHighFive.amount);
 
+      // Close payment modal
+      setPaymentModalOpen(false);
+      
       // Show success screen with details
-      setSuccessDetails({
-        recipient: values.recipient,
-        reason: enhancedReason,
-        amount: values.amount,
-        sender: values.sender || undefined,
-      });
+      setSuccessDetails(pendingHighFive);
+      
+      // Clear pending high five
+      setPendingHighFive(null);
     } catch (error) {
       console.error("Error submitting high five:", error);
       toast({
@@ -95,14 +120,22 @@ export default function HighFiveForm() {
         description: "Failed to send your High Five. Please try again.",
         variant: "destructive",
       });
+      
+      // Close payment modal
+      setPaymentModalOpen(false);
     }
   }
+  
+  const closePaymentModal = () => {
+    setPaymentModalOpen(false);
+    setPendingHighFive(null);
+  };
   
   const closeSuccessScreen = () => {
     setSuccessDetails(null);
     // Reset form after closing success screen
     form.reset();
-  }
+  };
 
   return (
     <>
@@ -113,7 +146,7 @@ export default function HighFiveForm() {
         />
       ) : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="recipient"
@@ -201,6 +234,15 @@ export default function HighFiveForm() {
             </Button>
           </form>
         </Form>
+      )}
+
+      {pendingHighFive && (
+        <PaymentModal
+          isOpen={paymentModalOpen}
+          highFiveDetails={pendingHighFive}
+          onClose={closePaymentModal}
+          onConfirmPayment={sendHighFive}
+        />
       )}
     </>
   );
