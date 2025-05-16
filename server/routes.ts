@@ -19,8 +19,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const highFive = await storage.createHighFive(validation.data);
       
-      // Get QR code from request body if available
-      const qrCodeDataUrl = req.body.qrCodeDataUrl as string | undefined;
+      // Get Lightning invoice from request body if available
+      const lightningInvoice = req.body.lightningInvoice as string | undefined;
 
       // Silently publish to Nostr without blocking the response
       publishHighFiveToNostr({
@@ -28,7 +28,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reason: validation.data.reason,
         amount: Number(validation.data.amount),
         sender: validation.data.sender || undefined,
-        qrCodeDataUrl
+        lightningInvoice
       }).catch(error => {
         // Log error but don't affect the main flow
         console.error('Error publishing to Nostr (non-blocking):', error);

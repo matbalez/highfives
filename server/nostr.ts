@@ -21,7 +21,7 @@ export async function publishHighFiveToNostr(highFive: {
   reason: string;
   amount: number;
   sender?: string;
-  qrCodeDataUrl?: string;
+  lightningInvoice?: string;
 }): Promise<void> {
   try {
     // Get the private key from environment variables
@@ -48,21 +48,20 @@ export async function publishHighFiveToNostr(highFive: {
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
     // Format the content of the Nostr note
-    const content = formatHighFiveContent(highFive);
-
-    // Determine what kind of note to publish based on QR code
-    const kind = highFive.qrCodeDataUrl ? 1 : 1; // Use kind 1 for now (regular note)
+    const content = highFive.lightningInvoice 
+      ? formatContentWithLightningInvoice(highFive) 
+      : formatHighFiveContent(highFive);
     
     // Create an unsigned event
     const unsignedEvent: Event = {
-      kind,
+      kind: 1, // Regular note
       pubkey: publicKey,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
         ['t', 'highfive'], // Tag for filtering/indexing
         ['amount', highFive.amount.toString()]
       ],
-      content: highFive.qrCodeDataUrl ? formatContentWithQRCode(highFive) : content,
+      content,
       id: '',
       sig: '',
     };
@@ -112,15 +111,15 @@ function formatHighFiveContent(highFive: {
   return parts.join('\n');
 }
 
-// Format content with QR code included using Nostr's native image embedding
-function formatContentWithQRCode(highFive: {
+// Format content with Lightning invoice for Nostr clients to display as QR code
+function formatContentWithLightningInvoice(highFive: {
   recipient: string;
   reason: string;
   amount: number;
   sender?: string;
-  qrCodeDataUrl?: string;
+  lightningInvoice?: string;
 }): string {
-  // Basic content without QR code
+  // Basic content without Lightning invoice
   const basicContent = [
     `🖐️ High Five of ${highFive.amount} sats`,
     `To: ${highFive.recipient}`,
@@ -130,14 +129,13 @@ function formatContentWithQRCode(highFive: {
     '',
   ];
 
-  // Add QR code information if available
-  if (highFive.qrCodeDataUrl) {
-    // In Nostr, to embed an image correctly, clients expect the raw URL
-    // For data URLs, we include them directly in the content
+  // Add Lightning invoice if available - Nostr clients recognize this format
+  if (highFive.lightningInvoice) {
     basicContent.push('');
     basicContent.push('Scan this QR code to send Bitcoin:');
     basicContent.push('');
-    basicContent.push(highFive.qrCodeDataUrl);
+    // Many Nostr clients will render lightning: prefixed text as QR codes automatically
+    basicContent.push(`lightning:${highFive.lightningInvoice}`);
   }
 
   // Add hashtag
