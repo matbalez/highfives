@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertHighFiveSchema } from "@shared/schema";
@@ -97,10 +97,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Serve static QR code images
-  app.use('/qr-codes', (req, res, next) => {
+  app.use('/qr-codes', (req: Request, res: Response, next: NextFunction) => {
+    // Express sendFile options
     const options = {
       root: qrCodesDir,
-      dotfiles: 'deny' as const,
+      dotfiles: 'deny' as 'deny' | 'allow' | 'ignore',
       headers: {
         'Cache-Control': 'public, max-age=31536000',
         'Content-Type': 'image/png'
