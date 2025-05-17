@@ -7,7 +7,7 @@ import FormData from 'form-data';
 
 // Define the Blossom API endpoints
 const BLOSSOM_SERVER_URL = 'https://relay.blossom.band';
-const BLOSSOM_UPLOAD_API = 'https://api.blossom.band/upload';
+const BLOSSOM_UPLOAD_API = 'https://api.blossom.band/v1/upload';
 
 /**
  * Uploads an image to Blossom service
@@ -170,7 +170,15 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
     const result = await response.json() as any;
     console.log('Blossom API response:', JSON.stringify(result));
     
-    if (!result || !result.url) {
+    if (!result) {
+      throw new Error('Blossom upload failed: Empty response');
+    }
+    
+    if (!result.success) {
+      throw new Error(`Blossom upload failed: ${result.message || 'Unknown error'}`);
+    }
+    
+    if (!result.url) {
       throw new Error('Blossom upload failed: Missing URL in response');
     }
     
