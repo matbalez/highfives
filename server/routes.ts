@@ -77,11 +77,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Update the high five with the Nostr event ID
           if (nostrEventId) {
-            // Since we're using an in-memory store, we need to update the object manually
-            const storedHighFive = await storage.getHighFive(highFive.id);
-            if (storedHighFive) {
-              storedHighFive.nostrEventId = nostrEventId;
-              // If this were a real database, we'd save it here
+            // Use our new update method to store the Nostr event ID in the database
+            const updatedHighFive = await storage.updateHighFiveNostrEventId(highFive.id, nostrEventId);
+            if (updatedHighFive) {
+              highFive.nostrEventId = nostrEventId;
+              console.log(`Updated high five ${highFive.id} with Nostr event ID: ${nostrEventId}`);
             }
           }
           

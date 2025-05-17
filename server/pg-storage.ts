@@ -50,4 +50,14 @@ export class PgStorage implements IStorage {
   async getAllHighFives(): Promise<HighFive[]> {
     return await db.select().from(highFives).orderBy(highFives.id);
   }
+  
+  async updateHighFiveNostrEventId(id: number, nostrEventId: string): Promise<HighFive | undefined> {
+    const result = await db
+      .update(highFives)
+      .set({ nostrEventId })
+      .where(eq(highFives.id, id))
+      .returning();
+    
+    return result[0];
+  }
 }

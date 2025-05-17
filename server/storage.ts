@@ -19,6 +19,7 @@ export interface IStorage {
   createHighFive(highFive: InsertHighFive): Promise<HighFive>;
   getHighFive(id: number): Promise<HighFive | undefined>;
   getAllHighFives(): Promise<HighFive[]>;
+  updateHighFiveNostrEventId(id: number, nostrEventId: string): Promise<HighFive | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -74,6 +75,16 @@ export class MemStorage implements IStorage {
 
   async getAllHighFives(): Promise<HighFive[]> {
     return Array.from(this.highFives.values());
+  }
+  
+  async updateHighFiveNostrEventId(id: number, nostrEventId: string): Promise<HighFive | undefined> {
+    const highFive = this.highFives.get(id);
+    if (highFive) {
+      highFive.nostrEventId = nostrEventId;
+      this.highFives.set(id, highFive);
+      return highFive;
+    }
+    return undefined;
   }
 }
 
