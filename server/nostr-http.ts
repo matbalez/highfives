@@ -117,36 +117,41 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add QR code as a direct base64 image in the content
-    if (highFive.lightningInvoice && qrCodeUrl) {
+    // Add QR code directly in the event using NIP-94 approach for file attachments
+    if (highFive.lightningInvoice) {
       try {
-        // Instead of trying to upload to an external service,
-        // we'll create a QR code directly as a data URI
-        const qrCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
+        console.log('Generating QR code directly for Nostr post...');
+        
+        // Generate QR code without relying on the file system
+        const qrCodeBuffer = await QRCode.toBuffer(highFive.lightningInvoice, {
           errorCorrectionLevel: 'M',
+          width: 300,
           margin: 2,
-          width: 256,
+          type: 'png',
           color: {
             dark: '#000000',
             light: '#ffffff'
           }
         });
         
-        console.log('Generated QR code data URI for Nostr post');
+        // Convert to base64
+        const base64QrCode = qrCodeBuffer.toString('base64');
         
-        // First, include the Lightning invoice text directly so it can be copied
-        event.content += `\n\nLightning payment instruction (for copying):\n\`${highFive.lightningInvoice.substring(0, 30)}...\``;
+        // Include the full invoice in the content for copying
+        event.content += `\n\nLightning payment instruction (for manual copying):\n\`${highFive.lightningInvoice}\``;
         
-        // Then include the QR code as an image in the content
-        // Some Nostr clients support this format for displaying images
-        event.content += `\n\n![QR Code for Bitcoin Lightning payment](${qrCodeDataUri})`;
+        // Add the QR code image to the event content directly
+        // This is widely supported in most Nostr clients
+        event.content += `\n\n![QR Code to pay with Lightning](data:image/png;base64,${base64QrCode})`;
         
-        // Also add specific tags that help Nostr clients understand this is an image
-        event.tags.push(['image', qrCodeDataUri]);
+        // Also add standard image reference tags for newer Nostr clients
+        // The 'image' tag is well-supported across clients
+        const imageUrl = `data:image/png;base64,${base64QrCode}`;
+        event.tags.push(['image', imageUrl]);
         
-        console.log('Added QR code directly to Nostr post content');
+        console.log('Added QR code directly in the post content and tags');
       } catch (err) {
-        console.error('Error generating QR code for Nostr post:', err);
+        console.error('Error adding QR code to Nostr post:', err);
         
         // Fall back to just including the lightning invoice text
         event.content += `\n\nLightning payment instruction: ${highFive.lightningInvoice}`;
