@@ -124,6 +124,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Missing recipient pubkey or message" });
       }
       
+      console.log(`Received request to send DM to: ${recipientPubkey}`);
+      
+      // Extract the PIN for debugging
+      const pinMatch = message.match(/verification PIN is: (\d{4})/);
+      if (pinMatch && pinMatch[1]) {
+        console.log(`Sending PIN: ${pinMatch[1]} to ${recipientPubkey}`);
+      }
+      
       const success = await sendNostrDM(recipientPubkey, message);
       
       if (success) {
@@ -133,7 +141,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       console.error("Error sending Nostr DM:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ 
+        error: "Internal server error", 
+        details: error instanceof Error ? error.message : String(error) 
+      });
     }
   });
 
