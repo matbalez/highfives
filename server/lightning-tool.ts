@@ -9,7 +9,7 @@ import { LightningAddress } from '@getalby/lightning-tools';
  */
 export async function getInvoiceFromLightningAddress(
   lightningAddress: string, 
-  amount: number = 1000, 
+  amount: number = 21000, // Changed to 21,000 sats
   comment: string = 'High Five Payment'
 ): Promise<string | null> {
   try {
@@ -44,6 +44,10 @@ export async function getInvoiceFromLightningAddress(
       console.error('Failed to generate invoice');
       return null;
     }
+    
+    // Log the full payment request for debugging
+    console.log(`Payment request for ${amount} sats to ${lightningAddress}:`);
+    console.log(invoice.paymentRequest);
     
     console.log(`Successfully generated invoice for ${lightningAddress}`);
     return invoice.paymentRequest;
