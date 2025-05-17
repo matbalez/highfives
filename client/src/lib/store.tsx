@@ -6,9 +6,9 @@ interface StoreContextType {
   notificationVisible: boolean;
   showNotification: () => void;
   hideNotification: () => void;
-  userNpub: string | null;
-  setUserNpub: (npub: string | null) => void;
-  isUserConnected: boolean;
+  nostrUser: string | null;
+  setNostrUser: (npub: string | null) => void;
+  isNostrConnected: boolean;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -16,24 +16,24 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [bitcoinBalance, setBitcoinBalance] = useState<number>(1000000);
   const [notificationVisible, setNotificationVisible] = useState<boolean>(false);
-  const [userNpub, setUserNpub] = useState<string | null>(null);
+  const [nostrUser, setNostrUser] = useState<string | null>(null);
 
   // Load user npub from localStorage on initial render
   useEffect(() => {
-    const savedNpub = localStorage.getItem('userNpub');
+    const savedNpub = localStorage.getItem('nostrUser');
     if (savedNpub) {
-      setUserNpub(savedNpub);
+      setNostrUser(savedNpub);
     }
   }, []);
 
   // Save user npub to localStorage when it changes
   useEffect(() => {
-    if (userNpub) {
-      localStorage.setItem('userNpub', userNpub);
+    if (nostrUser) {
+      localStorage.setItem('nostrUser', nostrUser);
     } else {
-      localStorage.removeItem('userNpub');
+      localStorage.removeItem('nostrUser');
     }
-  }, [userNpub]);
+  }, [nostrUser]);
 
   const showNotification = () => {
     setNotificationVisible(true);
@@ -51,9 +51,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         notificationVisible,
         showNotification,
         hideNotification,
-        userNpub,
-        setUserNpub,
-        isUserConnected: !!userNpub
+        nostrUser,
+        setNostrUser,
+        isNostrConnected: !!nostrUser
       }}
     >
       {children}

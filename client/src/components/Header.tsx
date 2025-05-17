@@ -5,7 +5,7 @@ import NostrConnectModal from "./NostrConnectModal";
 import { useStore } from "@/lib/store";
 
 export default function Header() {
-  const { userNpub, setUserNpub, isUserConnected } = useStore();
+  const { nostrUser, setNostrUser, isNostrConnected } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleConnectClick = () => {
@@ -13,9 +13,7 @@ export default function Header() {
   };
 
   const handleDisconnect = () => {
-    if (setUserNpub) {
-      setUserNpub(null);
-    }
+    setNostrUser(null);
   };
 
   return (
@@ -25,10 +23,10 @@ export default function Header() {
           <img src={highFivesLogo} alt="High Fives Logo" className="h-12" />
         </div>
         
-        {isUserConnected ? (
+        {isNostrConnected ? (
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium truncate max-w-[150px]">
-              {userNpub?.substring(0, 8)}...
+              {nostrUser?.substring(0, 8)}...
             </div>
             <Button 
               variant="outline" 

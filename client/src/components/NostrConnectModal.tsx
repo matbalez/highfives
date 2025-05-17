@@ -46,7 +46,7 @@ const InputOTPSlot = ({ char, hasFakeCaret, isActive, className }: {
 };
 
 export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModalProps) {
-  const store = useStore();
+  const { setNostrUser } = useStore();
   const [step, setStep] = useState<NostrConnectStep>('npub');
   const [npub, setNpub] = useState<string>('');
   const [pubkey, setPubkey] = useState<string>('');
@@ -142,9 +142,7 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
   const handlePinVerify = () => {
     if (pin === generatedPin) {
       // PIN matches, set the user as connected
-      if (setUserNpub) {
-        setUserNpub(npub);
-      }
+      setNostrUser(npub);
       setStep('success');
     } else {
       setError('Incorrect PIN. Please try again.');

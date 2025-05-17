@@ -22,6 +22,8 @@ if (!fs.existsSync(qrCodesDir)) {
   fs.mkdirSync(qrCodesDir, { recursive: true });
 }
 
+import { sendNostrDM } from './nostr-dm';
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for high fives
   app.post("/api/high-fives", async (req, res) => {
