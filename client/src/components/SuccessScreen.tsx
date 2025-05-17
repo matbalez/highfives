@@ -74,7 +74,11 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                 </div>
                 {highFive.sender && (
                   <div className="w-full sm:text-right">
-                    <p className="font-medium break-words">From: {highFive.sender}</p>
+                    <p className="font-medium break-words">
+                      From: {highFive.sender?.startsWith('npub')
+                        ? (highFive.senderProfileName || highFive.sender)
+                        : highFive.sender}
+                    </p>
                   </div>
                 )}
                 
