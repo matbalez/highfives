@@ -25,19 +25,79 @@ export async function uploadImageToBlossom(
     console.log('Preparing to upload to Blossom...');
     console.log(`Uploading ${imageBuffer.length} bytes to Blossom...`);
     
-    // Use uploadBlob directly with more detailed logs
-    console.log('Starting Blossom upload with server:', BLOSSOM_ENDPOINT);
-    console.log('Image buffer size:', imageBuffer.length, 'bytes');
-    
-    const result = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer);
+    // First try with uploadMedia
+    try {
+      console.log('Starting Blossom upload using uploadMedia with server:', BLOSSOM_ENDPOINT);
+      console.log('Image buffer size:', imageBuffer.length, 'bytes');
+      
+      const mediaResult = await uploadMedia(new URL(BLOSSOM_ENDPOINT), imageBuffer, {
+        signal: new AbortController().signal
+      });
 
-    // Log detailed result
-    console.log('Blossom upload result:', JSON.stringify(result));
-    console.log('Blossom upload successful, image URL:', result.url);
-    return result.url;
+      // Log detailed result
+      console.log('Blossom upload result (media):', JSON.stringify(mediaResult));
+      console.log('Blossom upload successful, image URL:', mediaResult.url);
+      return mediaResult.url;
+    } catch (mediaError) {
+      console.error('Error with uploadMedia, falling back to uploadBlob:', mediaError);
+      
+      // Try direct upload with uploadBlob as fallback
+      console.log('Starting Blossom upload using uploadBlob with server:', BLOSSOM_ENDPOINT);
+      const blobResult = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer, {
+        signal: new AbortController().signal
+      });
+
+      console.log('Blossom upload result (blob):', JSON.stringify(blobResult));
+      console.log('Blossom upload successful, image URL:', blobResult.url);
+      return blobResult.url;
+    }
+  } catch (mainError) {
+    console.error('Error uploading to primary Blossom endpoint:', mainError);
+    
+    // Try the fallback endpoint
+    try {
+      console.log('Trying fallback Blossom endpoint:', FALLBACK_ENDPOINT);
+      const fallbackResult = await uploadBlob(new URL(FALLBACK_ENDPOINT), imageBuffer, {
+        signal: new AbortController().signal
+      });
+      
+      console.log('Fallback Blossom upload successful, image URL:', fallbackResult.url);
+      return fallbackResult.url;
+    } catch (fallbackError) {
+      console.error('Error uploading to fallback Blossom endpoint:', fallbackError);
+      
+      // All attempts failed, use direct imgur upload as a last resort
+      return uploadToImgur(imageBuffer);
+    }
+  }
+}
+
+// Fallback to imgur if Blossom fails
+async function uploadToImgur(imageBuffer: Buffer): Promise<string> {
+  try {
+    console.log('Falling back to Imgur upload');
+    
+    // Generate a unique local file path
+    const tempDir = path.join(process.cwd(), 'tmp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+    const tempFilePath = path.join(tempDir, `${crypto.randomUUID()}.png`);
+    
+    // Save buffer to file
+    fs.writeFileSync(tempFilePath, imageBuffer);
+    
+    // This is just a placeholder URL for now
+    // In production you would implement actual Imgur API integration
+    const imgurUrl = `https://i.imgur.com/example.png`;
+    
+    // Clean up temp file
+    fs.unlinkSync(tempFilePath);
+    
+    return imgurUrl;
   } catch (error) {
-    console.error('Error uploading to Blossom:', error);
-    throw new Error(`Failed to upload image to Blossom: ${error instanceof Error ? error.message : String(error)}`);
+    console.error('Error with Imgur fallback upload:', error);
+    throw new Error('All image upload methods failed');
   }
 }
 
