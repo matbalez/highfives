@@ -58,53 +58,42 @@ export async function publishHighFiveToNostr(highFive: {
     // Format the basic content without the QR code image
     const content = formatHighFiveContent(highFive);
     
-    // Generate QR code directly as base64 data URI for embedding in Nostr post
-    let qrCodeBase64 = '';
+    // For storing QR code image reference
+    let qrCodeUrl = '';
     if (highFive.lightningInvoice) {
       try {
-        // Generate QR code directly as a base64 data URI (inline image)
-        qrCodeBase64 = await QRCode.toDataURL(highFive.lightningInvoice, {
-          errorCorrectionLevel: 'H',
-          margin: 1,
-          width: 300,
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
-          }
-        });
-        console.log('Generated QR code as base64 data URI');
+        // Upload QR code to Blossom and get the URL
+        qrCodeUrl = await generateAndUploadQRCode(highFive.lightningInvoice);
         
-        // Remove the data:image/png;base64, part to get just the base64 content
-        const base64Content = qrCodeBase64.replace(/^data:image\/png;base64,/, '');
-        
-        // Create a separate Nostr event specifically for the image (kind 1063 - direct image)
-        // This is the recommended way to attach images in Nostr
-        const imageEvent: Event = {
-          kind: 1063, // Nostr image kind
-          pubkey: publicKey,
-          created_at: Math.floor(Date.now() / 1000),
-          tags: [
-            ['alt', 'QR Code for Lightning payment'],
-            ['m', 'image/png'],
-            ['x', 'attachment']
-          ],
-          content: base64Content,
-          id: '',
-          sig: '',
-        };
-        
-        // Sign and publish the image event first
-        const signedImageEvent = finalizeEvent(imageEvent, hexKey as unknown as Uint8Array);
-        await pool.publish(NOSTR_RELAYS, signedImageEvent);
-        console.log('Published QR code image as a separate Nostr event');
-        
-        // Save the event ID to reference in the main high five post
-        const imageEventId = signedImageEvent.id;
-        
-        // Generate a NIP-23 compliant image URL scheme that Primal understands
-        qrCodeBase64 = `nostr:${imageEventId}`;
+        if (qrCodeUrl) {
+          console.log('QR code uploaded to Blossom successfully, URL:', qrCodeUrl);
+        } else {
+          // Fallback to base64 encoding if Blossom upload fails
+          console.log('Blossom upload failed. Falling back to base64 QR code');
+          qrCodeUrl = await QRCode.toDataURL(highFive.lightningInvoice, {
+            errorCorrectionLevel: 'H',
+            margin: 1,
+            width: 300,
+            color: {
+              dark: '#000000',
+              light: '#ffffff'
+            }
+          });
+        }
       } catch (err) {
-        console.error('Error generating QR code:', err);
+        console.error('Error generating or uploading QR code:', err);
+        
+        // Try to fall back to data URL if Blossom upload fails
+        try {
+          qrCodeUrl = await QRCode.toDataURL(highFive.lightningInvoice, {
+            errorCorrectionLevel: 'H',
+            margin: 1,
+            width: 300
+          });
+          console.log('Generated QR code as fallback data URL');
+        } catch (fallbackErr) {
+          console.error('Even fallback QR code generation failed:', fallbackErr);
+        }
       }
     }
     
@@ -132,18 +121,30 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // Add image tags based on the published image event
-    if (qrCodeBase64 && qrCodeBase64.startsWith('nostr:')) {
-      // Extract the event ID
-      const imageEventId = qrCodeBase64.replace('nostr:', '');
-      console.log(`Referencing QR code image event: ${imageEventId}`);
-      
-      // Add standard Nostr image reference tags
-      // These are the tags that Primal and most clients recognize
-      nostrEvent.tags.push(['e', imageEventId, '', 'image']);
-      
-      // For maximum compatibility with all Nostr clients
-      nostrEvent.tags.push(['imeta', imageEventId, 'image/png', 'QR Code for Lightning payment']); 
+    // Add image reference if we have a QR code URL from Blossom
+    if (qrCodeUrl) {
+      if (qrCodeUrl.startsWith('http')) {
+        // This is a Blossom URL, add it as an image URL tag
+        console.log(`Adding Blossom QR code image URL to Nostr post: ${qrCodeUrl}`);
+        
+        // Add standard image URL tag that most clients will recognize
+        nostrEvent.tags.push(['image', qrCodeUrl]);
+        
+        // For older clients that look for r and url tags
+        nostrEvent.tags.push(['r', qrCodeUrl]);
+        
+        // Some clients use this format
+        nostrEvent.tags.push(['picture', qrCodeUrl]);
+        
+        // Add alt text for accessibility
+        nostrEvent.tags.push(['alt', 'QR Code for Bitcoin Lightning payment']);
+      } else if (qrCodeUrl.startsWith('data:image')) {
+        // This is a base64 data URL fallback, embed it differently
+        console.log('Adding fallback base64 QR code to Nostr post');
+        
+        // Some clients support direct image embedding - we'll add a placeholder text
+        nostrEvent.content += '\n\n[QR code for payment attached - scan with your Lightning wallet]';
+      }
     }
 
     // Finalize and sign the event
