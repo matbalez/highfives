@@ -6,7 +6,6 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { uploadImageToNostrBuild } from './nostr-image-upload';
 import { generateAndUploadQRCode } from './blossom-client';
-import { createQRCodeImageEvent } from './nostr-direct-upload';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
@@ -149,27 +148,26 @@ export async function publishHighFiveToNostr(highFive: {
 
         // Save a local copy for display in our app
         await saveQRCodeLocally(highFive.lightningInvoice);
-        
-        // Create a NIP-94 event for the QR code image - the native Nostr way to handle images
+
+        // Try to upload the QR code image to Blossom
+        let qrCodeUrl = '';
         try {
-          console.log('Creating direct NIP-94 QR code image event...');
-          
-          // Create a dedicated image event and get its ID
-          const imageEventId = await createQRCodeImageEvent(highFive.lightningInvoice, privateKeyHex);
-          console.log('Created QR code image event with ID:', imageEventId);
-          
-          // Add reference to the image event in the main post
-          event.tags.push(['e', imageEventId, '', 'image']);
-          
-          // Add additional metadata that some clients look for
-          event.tags.push(['imeta', imageEventId, 'image/png', 'QR Code for Lightning payment']);
-          
-          console.log('Added image event reference to note');
-        } catch (imageError) {
-          console.error('Error creating QR code image event:', imageError);
-          
-          // Fallback to just saving a local QR code if the NIP-94 approach fails
-          console.log('Falling back to local QR code only');
+          // Upload QR code to Blossom storage
+          qrCodeUrl = await generateAndUploadQRCode(highFive.lightningInvoice);
+          if (qrCodeUrl) {
+            console.log('QR code uploaded to Blossom successfully, URL:', qrCodeUrl);
+            
+            // Add image URL tag that Nostr clients will recognize
+            event.tags.push(['image', qrCodeUrl]);
+            
+            // For compatibility with different Nostr clients
+            event.tags.push(['r', qrCodeUrl]);
+            event.tags.push(['picture', qrCodeUrl]);
+            event.tags.push(['alt', 'QR Code for Bitcoin Lightning payment']);
+          }
+        } catch (blossomErr) {
+          console.error('Error uploading QR code to Blossom:', blossomErr);
+          // Will continue without Blossom QR code image
         }
 
         // For maximum compatibility, include the full Lightning invoice text
