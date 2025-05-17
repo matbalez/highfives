@@ -146,30 +146,12 @@ export async function publishHighFiveToNostr(highFive: {
       try {
         console.log(`Adding Lightning invoice to Nostr post: ${highFive.lightningInvoice.substring(0, 15)}...`);
 
-        // Save a local copy for display in our app
+        // Save a local copy for display in our app (for our own UI)
         await saveQRCodeLocally(highFive.lightningInvoice);
 
-        // Try to upload the QR code image to Blossom 
-        // but don't include it in tags - just put in content to avoid size limits
-        let qrCodeUrl = '';
-        try {
-          // Upload QR code to Blossom storage
-          qrCodeUrl = await generateAndUploadQRCode(highFive.lightningInvoice);
-          if (qrCodeUrl) {
-            console.log('QR code uploaded to Blossom successfully, URL:', qrCodeUrl);
-            // We'll reference this URL in the content instead of tags
-          }
-        } catch (blossomErr) {
-          console.error('Error uploading QR code to Blossom:', blossomErr);
-          // Will continue without Blossom QR code image
-        }
-
-        // For maximum compatibility, include the full Lightning invoice text
-        // and QR code URL in the content, not in tags (to avoid size limits)
-        event.content += `\n\n## Scan to pay with Bitcoin Lightning ⚡\n\n`;
-        if (qrCodeUrl) {
-          event.content += `QR Code: ${qrCodeUrl}\n\n`;
-        }
+        // For maximum compatibility, just include the full Lightning invoice text
+        // in the content - keeping it simple with no images
+        event.content += `\n\n## Pay with Bitcoin Lightning ⚡\n\n`;
         event.content += `\`${highFive.lightningInvoice}\``;
         
         // Add shortened Lightning invoice tags to avoid tag size limits
