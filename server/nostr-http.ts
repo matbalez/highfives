@@ -4,7 +4,7 @@ import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { uploadQRCodeImage } from './upload-qr';
+import { uploadImage } from './nostr-image-upload';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
@@ -117,43 +117,39 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Embed QR code directly in the Nostr post content as base64
+    // Add QR code as a direct base64 image in the content
     if (highFive.lightningInvoice && qrCodeUrl) {
       try {
-        console.log(`Generating QR code for direct embedding in Nostr post`);
-        
-        // Generate a fresh QR code directly as a data URL
-        // This approach embeds the QR code directly in the Nostr post
-        const qrCodeDataUrl = await QRCode.toDataURL(highFive.lightningInvoice, {
-          errorCorrectionLevel: 'H', // Higher error correction for better scanning
-          margin: 1,                // Smaller margin
-          width: 240,               // Slightly smaller image size for better compatibility
+        // Instead of trying to upload to an external service,
+        // we'll create a QR code directly as a data URI
+        const qrCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
+          errorCorrectionLevel: 'M',
+          margin: 2,
+          width: 256,
           color: {
-            dark: '#000000',        // Standard black for maximum contrast
-            light: '#ffffff'        // White background
+            dark: '#000000',
+            light: '#ffffff'
           }
         });
         
-        console.log(`Successfully generated QR code data URL for Nostr post`);
+        console.log('Generated QR code data URI for Nostr post');
         
-        // Add the QR code to the post content as an inline image
-        // Most modern Nostr clients will render this properly
-        event.content += `\n\n### Scan this QR code to pay with Bitcoin:\n\n![QR Code for Lightning payment](${qrCodeDataUrl})`;
+        // First, include the Lightning invoice text directly so it can be copied
+        event.content += `\n\nLightning payment instruction (for copying):\n\`${highFive.lightningInvoice.substring(0, 30)}...\``;
         
-        // Add a plain text version of the payment info for clients that can't show images
-        const shortInvoice = highFive.lightningInvoice.substring(0, 30) + '...';
-        event.content += `\n\nLightning invoice: ${shortInvoice}`;
+        // Then include the QR code as an image in the content
+        // Some Nostr clients support this format for displaying images
+        event.content += `\n\n![QR Code for Bitcoin Lightning payment](${qrCodeDataUri})`;
         
-        // Add standard tags to help Nostr clients identify the post
-        event.tags.push(['t', 'bitcoin']);
-        event.tags.push(['t', 'lightning']);
+        // Also add specific tags that help Nostr clients understand this is an image
+        event.tags.push(['image', qrCodeDataUri]);
         
-        console.log(`Added QR code directly to Nostr post content`);
+        console.log('Added QR code directly to Nostr post content');
       } catch (err) {
         console.error('Error generating QR code for Nostr post:', err);
         
-        // If direct embedding fails, include a short message
-        event.content += `\n\nA QR code for Bitcoin payment should be available. If not visible, please contact the sender.`;
+        // Fall back to just including the lightning invoice text
+        event.content += `\n\nLightning payment instruction: ${highFive.lightningInvoice}`;
       }
     }
 
