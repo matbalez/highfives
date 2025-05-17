@@ -31,7 +31,7 @@ const formSchema = z.object({
 });
 
 export default function HighFiveForm() {
-  const { bitcoinBalance, setBitcoinBalance } = useStore();
+  const { bitcoinBalance, setBitcoinBalance, nostrUser } = useStore();
   const { toast } = useToast();
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -42,9 +42,16 @@ export default function HighFiveForm() {
     defaultValues: {
       recipient: "",
       reason: "",
-      sender: "",
+      sender: nostrUser || "",
     },
   });
+  
+  // Update sender field when nostrUser changes
+  useEffect(() => {
+    if (nostrUser) {
+      form.setValue("sender", nostrUser);
+    }
+  }, [nostrUser, form]);
 
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
