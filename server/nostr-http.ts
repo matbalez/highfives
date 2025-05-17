@@ -100,7 +100,6 @@ export async function publishHighFiveToNostr(highFive: {
       created_at: Math.floor(Date.now() / 1000),
       tags: [
         ['t', 'highfive'],
-        ['amount', highFive.amount.toString()]
       ],
       content,
       id: '',
@@ -147,7 +146,7 @@ function formatHighFiveContent(
   const fullQrCodeUrl = qrCodeUrl ? `${hostname}${qrCodeUrl}` : '';
   
   const parts = [
-    `🖐️ High Five of ${highFive.amount} sats`,
+    `🖐️ High Five`,
     `To: ${highFive.recipient}`,
     highFive.sender ? `From: ${highFive.sender}` : 'From: Anonymous',
     '',

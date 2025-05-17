@@ -9,7 +9,6 @@ interface ServerHighFive {
   id: number;
   recipient: string;
   reason: string;
-  amount: number;
   sender: string | null;
   createdAt: string;
 }
@@ -83,8 +82,7 @@ export default function HighFivesList() {
               
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-lg font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
-                  <p className="text-xs text-gray-400 font-normal font-sans mt-1">
+                  <p className="text-xs text-gray-400 font-normal font-sans">
                     {format(parseISO(highFive.createdAt), 'MMM d')}
                   </p>
                 </div>

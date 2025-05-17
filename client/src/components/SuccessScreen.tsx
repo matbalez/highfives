@@ -66,8 +66,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
               
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-xl font-bold">{highFive.amount.toLocaleString()} <span className="text-primary">₿</span></p>
-                  <p className="text-xs text-gray-400 font-normal font-sans mt-1">
+                  <p className="text-xs text-gray-400 font-normal font-sans">
                     {new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
                   </p>
                 </div>
