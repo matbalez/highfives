@@ -36,12 +36,22 @@ export async function lookupPaymentInstructions(btag: string): Promise<string | 
       
       // Per BIP-353, payment instructions should start with lno...
       if (record.startsWith('lno')) {
-        console.log('Found valid payment instruction');
+        console.log('Found valid payment instruction (direct format)');
         return record;
-      } else {
-        console.log('Found TXT record but it does not contain a valid payment instruction');
-        console.log('Record content:', record);
+      } 
+      // Check for bitcoin URI format (bitcoin:?lno=...)
+      else if (record.includes('lno=')) {
+        console.log('Found payment instruction in bitcoin URI format');
+        // Extract the lno parameter
+        const match = record.match(/lno=([^&]+)/);
+        if (match && match[1]) {
+          console.log('Extracted LNO payment instruction from URI');
+          return match[1];
+        }
       }
+      
+      console.log('Found TXT record but could not extract a valid payment instruction');
+      console.log('Record content:', record);
     }
     
     console.log('No payment instructions found');
