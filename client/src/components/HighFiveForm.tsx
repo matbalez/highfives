@@ -219,11 +219,7 @@ export default function HighFiveForm() {
                       />
                     </div>
                   </FormControl>
-                  <div className="text-xs text-gray-500 pl-1">
-                    {isNpubMode
-                      ? "Enter a Nostr npub (starts with npub1...)"
-                      : "Format: user@domain.com"}
-                  </div>
+
                 </FormItem>
               )}
             />
