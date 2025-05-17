@@ -140,6 +140,7 @@ export default function HighFiveForm() {
           recipient: pendingHighFive.recipient,
           reason: enhancedReason,
           sender: pendingHighFive.sender,
+          profileName: pendingHighFive.profileName, // Include profile name if available
           lightningInvoice: lightningInvoice // Pass lightning invoice separately
         }
       );
