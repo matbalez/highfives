@@ -46,16 +46,6 @@ export default function HighFiveForm() {
   });
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    // Check if user has enough bitcoins
-    if (values.amount > bitcoinBalance) {
-      toast({
-        title: "Insufficient Balance",
-        description: "You don't have enough bitcoins for this transaction.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Append two line breaks and high five emojis to the reason
     const enhancedReason = `${values.reason}\n\n✋✋✋`;
     
@@ -63,7 +53,6 @@ export default function HighFiveForm() {
     setPendingHighFive({
       recipient: values.recipient,
       reason: enhancedReason,
-      amount: values.amount,
       sender: values.sender || undefined,
     });
     
@@ -85,7 +74,6 @@ export default function HighFiveForm() {
         {
           recipient: pendingHighFive.recipient,
           reason: enhancedReason,
-          amount: pendingHighFive.amount,
           sender: pendingHighFive.sender,
           lightningInvoice: lightningInvoice // Pass lightning invoice separately
         }
@@ -93,9 +81,6 @@ export default function HighFiveForm() {
 
       // Invalidate the high fives query cache
       queryClient.invalidateQueries({ queryKey: ['/api/high-fives'] });
-
-      // Deduct from balance
-      setBitcoinBalance(bitcoinBalance - pendingHighFive.amount);
 
       // Close payment modal
       setPaymentModalOpen(false);
@@ -177,29 +162,7 @@ export default function HighFiveForm() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold text-lg">
-                    <span className="text-black">Bonus</span>
-                    <span className="text-gray-400 font-normal"> (in bitcoins aka satoshis)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        inputMode="numeric"
-                        className="p-3 pr-8 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
-                        {...field}
-                      />
-                      <span className="absolute inset-y-0 right-3 flex items-center text-primary">₿</span>
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+
 
             <FormField
               control={form.control}

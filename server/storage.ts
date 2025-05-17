@@ -57,7 +57,6 @@ export class MemStorage implements IStorage {
       id, 
       recipient: insertHighFive.recipient,
       reason: insertHighFive.reason,
-      amount: insertHighFive.amount ?? 0,
       sender: insertHighFive.sender ?? null,
       createdAt 
     };

@@ -18,7 +18,6 @@ export const highFives = pgTable("high_fives", {
   id: serial("id").primaryKey(),
   recipient: text("recipient").notNull(),
   reason: text("reason").notNull(),
-  amount: integer("amount").default(0),
   sender: text("sender"),
   createdAt: text("created_at").notNull(), // Storing timestamp as string for simplicity
 });

@@ -46,7 +46,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       publishHighFiveToNostr({
         recipient: validation.data.recipient,
         reason: validation.data.reason,
-        amount: Number(validation.data.amount),
         sender: validation.data.sender || undefined,
         lightningInvoice: effectiveInvoice
       }).catch(error => {

@@ -56,7 +56,6 @@ async function generateQRCodeImage(data: string): Promise<string> {
 export async function publishHighFiveToNostr(highFive: {
   recipient: string;
   reason: string;
-  amount: number;
   sender?: string;
   lightningInvoice?: string;
 }): Promise<void> {
@@ -139,7 +138,6 @@ function formatHighFiveContent(
   highFive: {
     recipient: string;
     reason: string;
-    amount: number;
     sender?: string;
   },
   qrCodeUrl: string = ''
