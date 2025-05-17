@@ -113,25 +113,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Found Lightning Address for npub: ${lightningAddress}`);
           
-          // Generate an actual Lightning invoice (payment request)
-          const amount = 1000; // 1000 sats for the High Five
-          const comment = "High Five Payment";
-          const invoice = await getInvoiceFromLightningAddress(lightningAddress, amount, comment);
+          // Get LNURL from Lightning Address
+          const lnurlData = await getLnurlFromLightningAddress(lightningAddress);
           
-          if (!invoice) {
-            console.log(`Failed to generate invoice for Lightning Address: ${lightningAddress}`);
+          if (!lnurlData) {
+            console.log(`No LNURL data found for Lightning Address: ${lightningAddress}`);
             return res.status(404).json({
-              message: "Payment generation failed",
-              details: "Could not generate a Lightning invoice for this address"
+              message: "Payment instructions not found",
+              details: "Could not retrieve LNURL from the Lightning Address"
             });
           }
           
-          console.log(`Successfully generated Lightning invoice for ${lightningAddress}`);
+          console.log(`Successfully retrieved LNURL for Lightning Address: ${lightningAddress}`);
           
           return res.status(200).json({
             btag,
-            paymentInstructions: invoice,
-            paymentType: 'bolt11',
+            paymentInstructions: lnurlData,
+            paymentType: 'lnurl',
             lightningAddress
           });
         } catch (error) {

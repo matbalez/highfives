@@ -111,8 +111,8 @@ export default function PaymentModal({
     
     if (paymentData.paymentType === 'lnurl') {
       return "Pay this LNURL";
-    } else if (paymentData.paymentType === 'bolt11') {
-      return "Pay this BOLT11 invoice";
+    } else if (paymentData.paymentType === 'lno') {
+      return "Pay with your BOLT12 wallet";
     } else {
       return "Scan with a Lightning wallet";
     }
