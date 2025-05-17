@@ -143,8 +143,13 @@ export default function HighFiveForm() {
   
   const closeSuccessScreen = () => {
     setSuccessDetails(null);
-    // Reset form after closing success screen
-    form.reset();
+    
+    // Preserve Nostr user if connected when resetting form
+    form.reset({
+      recipient: "",
+      reason: "",
+      sender: nostrUser || "",
+    });
   };
 
   return (
