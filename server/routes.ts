@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertHighFiveSchema } from "@shared/schema";
-import { publishHighFiveToNostr } from "./nostr-web";
+import { publishHighFiveToNostr } from "./nostr-http";
 import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
