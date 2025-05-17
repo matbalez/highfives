@@ -107,7 +107,7 @@ export async function publishHighFiveToNostr(highFive: {
         hexKey = data as string;
       } catch (e) {
         console.error('Invalid nsec key:', e);
-        return;
+        return null;
       }
     }
 

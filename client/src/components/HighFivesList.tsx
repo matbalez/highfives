@@ -11,6 +11,7 @@ interface ServerHighFive {
   reason: string;
   sender: string | null;
   createdAt: string;
+  nostrEventId?: string;
 }
 
 export default function HighFivesList() {
@@ -72,7 +73,9 @@ export default function HighFivesList() {
             <div className="space-y-4">
               <div>
                 <p className="text-xl font-bold break-words">
-                  <span className="text-black">₿</span>{highFive.recipient}
+                  {highFive.recipient.startsWith('npub') 
+                    ? highFive.recipient 
+                    : <><span className="text-black">₿</span>{highFive.recipient}</>}
                 </p>
               </div>
               
@@ -92,6 +95,20 @@ export default function HighFivesList() {
                   </div>
                 )}
               </div>
+              
+              {/* Nostr link if available */}
+              {highFive.nostrEventId && (
+                <div className="pt-3 text-center w-full">
+                  <a 
+                    href={`https://njump.me/${highFive.nostrEventId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 text-sm font-medium underline"
+                  >
+                    See on Nostr
+                  </a>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
