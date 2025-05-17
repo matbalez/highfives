@@ -21,26 +21,8 @@ function Router() {
 }
 
 function App() {
-  // Initialize WebSocket connection when the app loads
-  useEffect(() => {
-    // Only setup WebSocket in browser environment and after a short delay to ensure DOM is ready
-    if (typeof window !== 'undefined') {
-      // Add a small delay before initializing the WebSocket
-      const initTimer = setTimeout(() => {
-        // Setup WebSocket connection with proper error handling
-        const ws = setupWebSocket();
-      }, 1000);
-      
-      // Clean up function
-      return () => {
-        // Clear the timer if component unmounts before initialization
-        clearTimeout(initTimer);
-        
-        // Close any open WebSocket connections using the exported function
-        closeWebSocket();
-      };
-    }
-  }, []);
+  // Don't initialize WebSocket connection in App component
+  // This will be done only when needed for specific features
   
   return (
     <QueryClientProvider client={queryClient}>
