@@ -7,7 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { StoreProvider } from "./lib/store.tsx";
+import { StoreProvider } from "./lib/store";
 import { useEffect } from "react";
 import { setupWebSocket } from "./lib/websocket";
 

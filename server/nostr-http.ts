@@ -138,7 +138,7 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add QR code to the Nostr post - directly embed Lightning invoice
+    // Add QR code to the Nostr post - properly reference the uploaded image
     if (highFive.lightningInvoice && qrCodeUrl) {
       try {
         console.log(`Adding Lightning invoice to Nostr post: ${highFive.lightningInvoice.substring(0, 15)}...`);
@@ -148,32 +148,21 @@ export async function publishHighFiveToNostr(highFive: {
         event.content += `\n\n## Scan to pay with Bitcoin Lightning ⚡\n\n`;
         event.content += `\`${highFive.lightningInvoice}\``;
         
-        // Most Nostr clients can detect and generate QR codes from Lightning invoices
-        // So even without embedding an image, they will often show a QR code
-        
         // Add Lightning invoice tags that some clients recognize
         event.tags.push(['lightning', highFive.lightningInvoice]);
         event.tags.push(['l', highFive.lightningInvoice]);
         
-        // Also add a QR code data URI for clients that support it
-        try {
-          const qrCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
-            errorCorrectionLevel: 'L',
-            margin: 1,
-            width: 240,
-            color: {
-              dark: '#000000',
-              light: '#ffffff'
-            }
-          });
-          
-          // Add the QR code image after the text
-          event.content += `\n\n![QR Code](${qrCodeDataUri})`;
-          
-          // Also include standard image tags
-          event.tags.push(['image', qrCodeDataUri]);
-        } catch (qrErr) {
-          console.error('Error generating QR code image:', qrErr);
+        // Add the QR code image reference after the text
+        if (qrCodeUrl.startsWith('/')) {
+          // Local file path - need to use absolute URL
+          const hostname = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.replit.dev` : 'https://highfives.replit.app';
+          const fullQrCodeUrl = `${hostname}${qrCodeUrl}`;
+          event.content += `\n\n![QR Code](${fullQrCodeUrl})`;
+          event.tags.push(['image', fullQrCodeUrl]);
+        } else {
+          // Already a full URL from Blossom
+          event.content += `\n\n![QR Code](${qrCodeUrl})`;
+          event.tags.push(['image', qrCodeUrl]);
         }
         
         console.log('Added Lightning invoice and QR code to Nostr post');
