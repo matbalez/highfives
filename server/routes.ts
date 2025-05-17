@@ -114,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Found Lightning Address for npub: ${lightningAddress}`);
           
           // Generate an actual Lightning invoice (payment request)
-          const amount = 1000; // 1000 sats for the High Five
+          const amount = 21000; // 21,000 sats for the High Five
           const comment = "High Five Payment";
           const invoice = await getInvoiceFromLightningAddress(lightningAddress, amount, comment);
           
