@@ -152,18 +152,40 @@ export async function publishHighFiveToNostr(highFive: {
         // Try to upload the QR code image to Blossom
         let qrCodeUrl = '';
         try {
+          // Create a temporary file with the QR code for debugging
+          const tmpQrPath = path.join(QR_CODE_DIR, 'debug-qr-code.png');
+          await QRCode.toFile(tmpQrPath, highFive.lightningInvoice, {
+            type: 'png',
+            errorCorrectionLevel: 'H',
+            margin: 1,
+            width: 400
+          });
+          console.log(`Debug QR code saved to: ${tmpQrPath}`);
+          
+          console.log('Attempting to upload QR code to Blossom...');
           // Upload QR code to Blossom storage
           qrCodeUrl = await generateAndUploadQRCode(highFive.lightningInvoice);
-          if (qrCodeUrl) {
+          
+          console.log('generateAndUploadQRCode returned URL:', qrCodeUrl);
+          
+          if (qrCodeUrl && qrCodeUrl.startsWith('http')) {
             console.log('QR code uploaded to Blossom successfully, URL:', qrCodeUrl);
             
             // Add image URL tag that Nostr clients will recognize
             event.tags.push(['image', qrCodeUrl]);
+            console.log('Added image tag:', ['image', qrCodeUrl]);
             
             // For compatibility with different Nostr clients
             event.tags.push(['r', qrCodeUrl]);
             event.tags.push(['picture', qrCodeUrl]);
+            
+            // Add alt text for accessibility
             event.tags.push(['alt', 'QR Code for Bitcoin Lightning payment']);
+            
+            // Log all tags for debugging
+            console.log('All event tags after adding image:', JSON.stringify(event.tags));
+          } else {
+            console.log('Blossom upload did not return a valid URL:', qrCodeUrl);
           }
         } catch (blossomErr) {
           console.error('Error uploading QR code to Blossom:', blossomErr);

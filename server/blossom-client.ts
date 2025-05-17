@@ -1,11 +1,15 @@
 import { uploadBlob } from 'blossom-client-sdk/actions/upload';
+import { uploadMedia } from 'blossom-client-sdk/actions/media';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 
-// Define the Blossom endpoint
-const BLOSSOM_ENDPOINT = 'https://relay.blossom.band';
+// Define the Blossom endpoint - try different Blossom relay
+const BLOSSOM_ENDPOINT = 'https://blob.pleb.network';
+
+// Fallback endpoint if the first one doesn't work
+const FALLBACK_ENDPOINT = 'https://relay.blossom.band';
 
 /**
  * Uploads an image to Blossom service
@@ -21,10 +25,14 @@ export async function uploadImageToBlossom(
     console.log('Preparing to upload to Blossom...');
     console.log(`Uploading ${imageBuffer.length} bytes to Blossom...`);
     
-    // Use uploadBlob directly
+    // Use uploadBlob directly with more detailed logs
+    console.log('Starting Blossom upload with server:', BLOSSOM_ENDPOINT);
+    console.log('Image buffer size:', imageBuffer.length, 'bytes');
+    
     const result = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer);
 
-    // The result contains the URL of the uploaded image
+    // Log detailed result
+    console.log('Blossom upload result:', JSON.stringify(result));
     console.log('Blossom upload successful, image URL:', result.url);
     return result.url;
   } catch (error) {
