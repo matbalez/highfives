@@ -46,19 +46,44 @@ export default function HighFiveForm() {
     },
   });
 
-  function handleFormSubmit(values: z.infer<typeof formSchema>) {
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+
+  async function handleFormSubmit(values: z.infer<typeof formSchema>) {
     // Append two line breaks and high five emojis to the reason
     const enhancedReason = `${values.reason}\n\n✋✋✋`;
     
-    // Store the high five details and show payment modal
-    setPendingHighFive({
-      recipient: values.recipient,
-      reason: enhancedReason,
-      sender: values.sender || undefined,
-    });
+    // Show loading state while we verify payment instructions
+    setIsVerifyingPayment(true);
     
-    // Open payment modal - the modal will handle the payment instruction lookup
-    setPaymentModalOpen(true);
+    try {
+      // Verify payment instructions exist
+      const btag = values.recipient;
+      const response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(btag)}`);
+      
+      if (response.data && response.data.paymentInstructions) {
+        // Store the high five details and show payment modal
+        setPendingHighFive({
+          recipient: values.recipient,
+          reason: enhancedReason,
+          sender: values.sender || undefined,
+        });
+        
+        // Open payment modal
+        setPaymentModalOpen(true);
+      } else {
+        // This shouldn't happen based on API design but handling just in case
+        throw new Error("Invalid payment instructions");
+      }
+    } catch (error) {
+      console.error("Error fetching payment instructions:", error);
+      toast({
+        title: "Payment Lookup Error",
+        description: "No payment instructions found for this recipient. Please verify the recipient is a valid Bitcoin address.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingPayment(false);
+    }
   }
 
   async function sendHighFive(lightningInvoice: string) {
@@ -184,9 +209,17 @@ export default function HighFiveForm() {
 
             <Button
               type="submit"
+              disabled={isVerifyingPayment}
               className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
             >
-              Send High Five
+              {isVerifyingPayment ? (
+                <div className="flex items-center justify-center">
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-white"></div>
+                  Verifying Payment Details...
+                </div>
+              ) : (
+                "Send High Five"
+              )}
             </Button>
           </form>
         </Form>
