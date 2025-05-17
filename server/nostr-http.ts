@@ -149,13 +149,13 @@ export async function publishHighFiveToNostr(highFive: {
         // Save a local copy for display in our app (for our own UI)
         await saveQRCodeLocally(highFive.lightningInvoice);
 
-        // For maximum compatibility, just include the full Lightning invoice text
-        // in the content - keeping it simple with no images
-        event.content += `\n\n## Pay with Bitcoin Lightning ⚡\n\n`;
-        event.content += `\`${highFive.lightningInvoice}\``;
+        // Completely replace the event content with the new format
+        event.content = formatHighFiveContent({
+          ...highFive,
+          lightningInvoice: highFive.lightningInvoice
+        });
         
-        // Add shortened Lightning invoice tags to avoid tag size limits
-        // Instead of adding the full invoice in the tags, we'll just mention it's available in content
+        // Add Lightning invoice tags
         event.tags.push(['lightning', 'See content for full invoice']);
         event.tags.push(['l', 'Lightning payment available']);
         
@@ -231,43 +231,47 @@ function formatHighFiveContent(
     recipient: string;
     reason: string;
     sender?: string;
+    lightningInvoice?: string;
   }
 ): string {
-  // Format sender with nostr mention if it's an npub
-  let senderDisplay = 'From: Anonymous';
+  // Format sender display
+  let senderPart = 'Anonymous';
   if (highFive.sender) {
     if (highFive.sender.startsWith('npub')) {
-      // Format as a proper Nostr mention with npub only (clients will render with @)
-      senderDisplay = `From: ${highFive.sender}`;
+      // Format as a proper Nostr mention with npub
+      senderPart = `${highFive.sender}`;
       
       // Add a log to track that we're adding Nostr mentions
       console.log(`Adding mention for sender: ${highFive.sender}`);
     } else {
-      senderDisplay = `From: ${highFive.sender}`;
+      senderPart = highFive.sender;
     }
   }
   
-  // Format recipient with nostr mention if it's an npub
-  let recipientDisplay = `To: ${highFive.recipient}`;
+  // Format recipient display
+  let recipientPart = highFive.recipient;
   if (highFive.recipient.startsWith('npub')) {
-    // Format as a proper Nostr mention with npub only (clients will render with @)
-    recipientDisplay = `To: ${highFive.recipient}`;
-    
-    // Add a log to track that we're adding Nostr mentions
+    // Format as a proper Nostr mention
     console.log(`Adding mention for recipient: ${highFive.recipient}`);
   }
 
+  // New format according to specifications
   const parts = [
-    `🖐️ High Five`,
-    recipientDisplay,
-    senderDisplay,
+    `🖐️ High Five 🖐️ to ${recipientPart} from ${senderPart}`,
     '',
     highFive.reason,
     '',
-    'Scan the QR code to send Bitcoin:',
-    '',
-    '#highfives'
+    '🖐️ High Five 🖐️'
   ];
+  
+  // Add the payment instruction if available
+  if (highFive.lightningInvoice) {
+    parts.push('');
+    parts.push(highFive.lightningInvoice);
+  }
+  
+  parts.push('');
+  parts.push('#highfives');
 
   return parts.join('\n');
 }
