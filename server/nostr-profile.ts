@@ -179,15 +179,12 @@ export function extractProfileInfo(event: Event): { name?: string, displayName?:
 }
 
 /**
- * Get profile name from a Nostr npub using NDK
+ * Get profile name from a Nostr npub using profile events
  * @param npub The npub to look up
  * @returns The profile name if found, or null
  */
 export async function getProfileNameFromNpub(npub: string): Promise<string | null> {
   try {
-    // Import NDK
-    const NDK = require('@nostr-dev-kit/ndk').default;
-
     // Decode the npub to get the hex public key
     let pubkey: string;
     try {
@@ -202,32 +199,34 @@ export async function getProfileNameFromNpub(npub: string): Promise<string | nul
       return null;
     }
 
-    console.log(`Looking up profile for pubkey: ${pubkey}`);
+    // Set up Nostr pool
+    const pool = setupNostrPool(PROFILE_RELAYS);
 
-    // Initialize NDK with reliable relays
-    const ndk = new NDK({
-      explicitRelayUrls: [
-        'wss://relay.damus.io',
-        'wss://relay.primal.net',
-        'wss://nos.lol',
-        'wss://relay.nostr.band'
-      ]
-    });
+    // Look up the profile metadata (kind 0) events
+    console.log(`Looking up profile metadata for pubkey: ${pubkey}`);
+    const profileEvents = await getProfileEvents(pool, pubkey);
 
-    // Connect to relays
-    await ndk.connect();
+    if (!profileEvents.length) {
+      console.log('No profile metadata found');
+      pool.close(PROFILE_RELAYS);
+      return null;
+    }
 
-    // Get user and fetch profile
-    const user = ndk.getUser({ pubkey });
-    await user.fetchProfile();
+    // Sort by created_at to get the most recent event
+    profileEvents.sort((a, b) => b.created_at - a.created_at);
+    const latestProfile = profileEvents[0];
 
-    // Get profile name (prefer display_name, fall back to name)
-    const profileName = user.profile?.display_name || user.profile?.name;
-    console.log(`Profile name from NDK: ${profileName || 'No name found'}`);
+    // Extract profile info from metadata
+    const profileInfo = extractProfileInfo(latestProfile);
+    const profileName = profileInfo.displayName || profileInfo.name;
+    console.log(`Profile name extracted: ${profileName || 'No name found'}`);
 
+    // Clean up pool
+    pool.close(PROFILE_RELAYS);
+    
     return profileName || null;
   } catch (error) {
-    console.error('Error getting profile name from npub using NDK:', error);
+    console.error('Error getting profile name from npub:', error);
     return null;
   }
 }

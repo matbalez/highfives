@@ -10,7 +10,7 @@ import crypto from 'crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import express from 'express';
 import { lookupPaymentInstructions } from "./dns-util";
-import { getLightningAddressFromNpub } from "./nostr-profile";
+import { getLightningAddressFromNpub, getProfileNameFromNpub } from "./nostr-profile";
 import { getLnurlFromLightningAddress, getInvoiceFromLightningAddress } from "./lightning-tool";
 
 // Create public directory and qr-codes subdirectory if they don't exist
@@ -139,7 +139,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Found Lightning Address for npub: ${lightningAddress}`);
           
           // Also get profile name if available
-          const { getProfileNameFromNpub } = require('./nostr-profile');
           const profileName = await getProfileNameFromNpub(btag);
           
           // Generate an actual Lightning invoice (payment request)
