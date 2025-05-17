@@ -6,6 +6,9 @@ interface StoreContextType {
   notificationVisible: boolean;
   showNotification: () => void;
   hideNotification: () => void;
+  nostrUser: string | null;
+  setNostrUser: (npub: string | null) => void;
+  isNostrConnected: boolean;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -13,6 +16,13 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const [bitcoinBalance, setBitcoinBalance] = useState<number>(1000000);
   const [notificationVisible, setNotificationVisible] = useState<boolean>(false);
+  const [nostrUser, setNostrUserState] = useState<string | null>(() => {
+    // Load previously connected Nostr user from localStorage on init
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('connectedNpub');
+    }
+    return null;
+  });
 
   const showNotification = () => {
     setNotificationVisible(true);
@@ -20,6 +30,18 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
   const hideNotification = () => {
     setNotificationVisible(false);
+  };
+  
+  // Save Nostr user to localStorage whenever it changes
+  const setNostrUser = (npub: string | null) => {
+    setNostrUserState(npub);
+    if (typeof window !== 'undefined') {
+      if (npub) {
+        localStorage.setItem('connectedNpub', npub);
+      } else {
+        localStorage.removeItem('connectedNpub');
+      }
+    }
   };
 
   return (
@@ -29,7 +51,10 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         setBitcoinBalance,
         notificationVisible,
         showNotification,
-        hideNotification
+        hideNotification,
+        nostrUser,
+        setNostrUser,
+        isNostrConnected: !!nostrUser
       }}
     >
       {children}
