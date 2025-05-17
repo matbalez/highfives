@@ -12,6 +12,7 @@ interface ServerHighFive {
   sender: string | null;
   createdAt: string;
   nostrEventId?: string;
+  profileName?: string;
 }
 
 export default function HighFivesList() {

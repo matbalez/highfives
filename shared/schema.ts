@@ -21,6 +21,7 @@ export const highFives = pgTable("high_fives", {
   sender: text("sender"),
   createdAt: text("created_at").notNull(), // Storing timestamp as string for simplicity
   nostrEventId: text("nostr_event_id"), // Event ID from Nostr publication
+  profileName: text("profile_name"), // Profile name for npub recipients
 });
 
 export const insertHighFiveSchema = createInsertSchema(highFives).omit({

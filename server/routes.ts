@@ -39,7 +39,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const highFive = await storage.createHighFive(validation.data);
+      // Include the profile name if provided
+      const profileName = req.body.profileName as string | undefined;
+      
+      const highFive = await storage.createHighFive({
+        ...validation.data,
+        profileName
+      });
       
       // Get Lightning invoice from request body if available
       const lightningInvoice = req.body.lightningInvoice as string | undefined;
