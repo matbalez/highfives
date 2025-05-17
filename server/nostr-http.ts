@@ -4,7 +4,7 @@ import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { uploadImage } from './nostr-image-upload';
+import { uploadQRCodeToBlossom } from './blossom-upload';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
@@ -18,7 +18,7 @@ const NOSTR_RELAYS = [
   'wss://relay.nostr.band'
 ];
 
-// Directory to store QR code images
+// Directory to store QR code images (for local fallback)
 const QR_CODE_DIR = path.join(process.cwd(), 'public', 'qr-codes');
 
 // Initialize Nostr connection pool
@@ -31,26 +31,47 @@ if (!fs.existsSync(QR_CODE_DIR)) {
 }
 console.log(`Serving QR code images from ${QR_CODE_DIR}`);
 
-// Generate a QR code image and save it to public directory
+// Generate a QR code image, upload to Blossom, and return URL
 async function generateQRCodeImage(data: string): Promise<string> {
-  // Generate a unique filename
-  const filename = `${crypto.randomUUID()}.png`;
-  const filepath = path.join(QR_CODE_DIR, filename);
-  
-  // Generate the QR code as a PNG file
-  await QRCode.toFile(filepath, data, {
-    type: 'png',
-    errorCorrectionLevel: 'H',
-    margin: 1,
-    width: 300,
-    color: {
-      dark: '#000000',
-      light: '#ffffff'
-    }
-  });
-  
-  // Return the public URL
-  return `/qr-codes/${filename}`;
+  try {
+    // Generate the QR code buffer
+    const qrBuffer = await QRCode.toBuffer(data, {
+      type: 'png',
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      width: 300,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    });
+    
+    // Upload to Blossom and get URL
+    const blossomUrl = await uploadQRCodeToBlossom(qrBuffer);
+    console.log(`Uploaded QR code to Blossom: ${blossomUrl}`);
+    return blossomUrl;
+  } catch (error) {
+    console.error('Error uploading QR code to Blossom, falling back to local storage:', error);
+    
+    // Fallback to local storage if Blossom upload fails
+    const filename = `${crypto.randomUUID()}.png`;
+    const filepath = path.join(QR_CODE_DIR, filename);
+    
+    // Generate the QR code as a PNG file locally
+    await QRCode.toFile(filepath, data, {
+      type: 'png',
+      errorCorrectionLevel: 'H',
+      margin: 1,
+      width: 300,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    });
+    
+    // Return the public URL (local fallback)
+    return `/qr-codes/${filename}`;
+  }
 }
 
 // Publish a high five to Nostr
