@@ -12,7 +12,6 @@ import express from 'express';
 import { lookupPaymentInstructions } from "./dns-util";
 import { getLightningAddressFromNpub } from "./nostr-profile";
 import { getLnurlFromLightningAddress } from "./lightning-tool";
-import { testNostrProfileLookup } from "./direct-nostr-lookup";
 
 // Create public directory and qr-codes subdirectory if they don't exist
 const publicDir = path.join(process.cwd(), 'public');
@@ -95,10 +94,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log(`Processing recipient: ${btag}, isNpub: ${btag.toLowerCase().startsWith('npub')}`);
-      
       // Process different recipient format types
-      if (btag.toLowerCase().startsWith('npub')) {
+      if (btag.startsWith('npub')) {
         // Handle Nostr npub
         console.log(`Looking up payment instructions for npub: ${btag}`);
         

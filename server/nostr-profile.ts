@@ -137,31 +137,20 @@ async function getProfileEvents(pool: SimplePool, pubkey: string): Promise<Event
  */
 function extractLightningAddress(event: Event): string | null {
   try {
-    console.log('Extracting Lightning Address from event:', event);
-    
     // Parse the content as JSON
     const content = JSON.parse(event.content);
-    console.log('Parsed content:', content);
     
     // Look for Lightning Address in lud16 field
     if (content.lud16) {
-      console.log('Found Lightning Address in lud16:', content.lud16);
       return content.lud16;
     }
     
     // Alternative field name sometimes used
     if (content.lightning_address) {
-      console.log('Found Lightning Address in lightning_address field:', content.lightning_address);
       return content.lightning_address;
     }
     
-    // Check additional fields that might contain Lightning Address
-    if (content.lud06) {
-      console.log('Found LNURL in lud06 field (not a Lightning Address)');
-    }
-    
     // No Lightning Address found
-    console.log('No Lightning Address found in profile metadata');
     return null;
   } catch (error) {
     console.error('Error parsing profile content:', error);
