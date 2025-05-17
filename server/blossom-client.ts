@@ -3,10 +3,10 @@ import * as path from 'path';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 import fetch from 'node-fetch';
-import * as BlossomClient from 'blossom-client-sdk';
+import FormData from 'form-data';
 
-// Define the Blossom server URL
-const BLOSSOM_SERVER_URL = 'https://relay.blossom.band';
+// Define the Blossom API endpoint for direct uploads
+const BLOSSOM_UPLOAD_API = 'https://api.blossom.band/v1/upload';
 
 /**
  * Uploads an image to Blossom service
@@ -127,32 +127,41 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
     }
     
     // Use precisely the approach from the Blossom documentation
-    const server = new URL(BLOSSOM_SERVER_URL);
-    console.log(`Uploading to Blossom server: ${server.toString()}`);
+    // Upload directly to the Blossom API
+    console.log(`Preparing to upload to Blossom API: ${BLOSSOM_UPLOAD_API}`);
     
     try {
-      // Create an upload auth event - this creates a Nostr event authorizing the upload
-      console.log('Creating upload auth event...');
-      const uploadAuth = await BlossomClient.createUploadAuth(
-        qrCodeBuffer, 
-        server, 
-        "QR Code for Lightning Payment"
-      );
+      // Create a temporary file to store the QR code image
+      const tempDir = path.join(process.cwd(), 'tmp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
       
-      // Encode it using base64
-      console.log('Encoding authorization header...');
-      const encodedAuthHeader = BlossomClient.encodeAuthorizationHeader(uploadAuth);
+      // Create a unique file name for the QR code
+      const filename = `qrcode-${crypto.randomUUID()}.png`;
+      const tempFilePath = path.join(tempDir, filename);
       
-      // Manually make the request
-      console.log('Making PUT request to upload endpoint...');
-      const response = await fetch(new URL("/upload", server), {
-        method: "PUT",
-        body: qrCodeBuffer,
-        headers: { 
-          authorization: encodedAuthHeader,
-          'Content-Type': 'image/png'
-        }
-      });
+      // Write the QR code image to the file
+      fs.writeFileSync(tempFilePath, qrCodeBuffer);
+      console.log(`Saved QR code to temporary file: ${tempFilePath}`);
+      
+      try {
+        // Create a FormData object for the file upload
+        const formData = new FormData();
+        
+        // Add the file to the form
+        formData.append('file', fs.createReadStream(tempFilePath), {
+          filename: filename,
+          contentType: 'image/png'
+        });
+        
+        // Upload to Blossom API directly
+        console.log(`Uploading QR code to Blossom API: ${BLOSSOM_UPLOAD_API}`);
+        const response = await fetch(BLOSSOM_UPLOAD_API, {
+          method: 'POST',
+          body: formData,
+          headers: formData.getHeaders()
+        });
       
       console.log(`Response status: ${response.status}`);
       
