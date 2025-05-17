@@ -90,13 +90,13 @@ export async function publishHighFiveToNostr(highFive: {
   reason: string;
   sender?: string;
   lightningInvoice?: string;
-}): Promise<void> {
+}): Promise<string | null> {
   try {
     // Get private key from environment variables
     const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
     if (!privateKeyHex) {
       console.error('Cannot publish to Nostr: NOSTR_PRIVATE_KEY is not set');
-      return;
+      return null;
     }
 
     // Handle nsec format if needed
@@ -209,15 +209,19 @@ export async function publishHighFiveToNostr(highFive: {
       if (successCount > 0) {
         console.log(`High Five successfully published to Nostr with event ID: ${signedEvent.id}`);
         console.log(`Search for this event ID in Nostr clients or use https://nostr.watch/e/${signedEvent.id}`);
+        return signedEvent.id; // Return the successful event ID
       } else {
         console.error(`Failed to publish High Five to any Nostr relay`);
+        return null;
       }
     } catch (error) {
       console.error('Error waiting for Nostr publications:', error);
+      return null;
     }
   } catch (error) {
     // Don't let Nostr errors affect the main application
     console.error('Error publishing to Nostr:', error);
+    return null;
   }
 }
 
