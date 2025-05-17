@@ -8,12 +8,18 @@ if (typeof global !== 'undefined') {
 
 // List of Nostr relays to publish to - using more relays for better delivery
 const NOSTR_RELAYS = [
-  'wss://relay.damus.io',
+  'wss://nostr.mutinywallet.com',
+  'wss://relay.mutinywallet.com',
+  'wss://relay.snort.social',
   'wss://nos.lol',
-  'wss://relay.nostr.band',
+  'wss://nostr.fmt.wiz.biz',
+  'wss://relay.damus.io',
+  'wss://relay.primal.net',
   'wss://nostr.wine',
-  'wss://relay.current.fyi',
-  'wss://relay.snort.social'
+  'wss://relay.nostr.band',
+  'wss://nostr.zbd.gg',
+  'wss://relay.nos.social',
+  'wss://relay.current.fyi'
 ];
 
 // Initialize Nostr connection pool
@@ -95,8 +101,16 @@ export async function sendNostrDM(recipientPubkey: string, message: string): Pro
     
     try {
       // Wait for at least one successful publication
-      const pub = await Promise.any(pubs);
-      console.log(`DM successfully sent via relay: ${pub.url}`);
+      await Promise.any(pubs);
+      console.log(`DM successfully published to at least one relay`);
+      
+      // Log the PIN for debugging
+      const pinRegex = /verification PIN is: (\d{4})/;
+      const match = message.match(pinRegex);
+      if (match && match[1]) {
+        console.log(`Sent verification PIN: ${match[1]}`);
+      }
+      
       return true;
     } catch (pubError) {
       console.error('Failed to publish to any relay:', pubError);
