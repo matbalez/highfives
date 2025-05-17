@@ -13,6 +13,7 @@ interface ServerHighFive {
   createdAt: string;
   nostrEventId?: string;
   profileName?: string;
+  senderProfileName?: string;
 }
 
 export default function HighFivesList() {
@@ -92,7 +93,11 @@ export default function HighFivesList() {
                 </div>
                 {highFive.sender && (
                   <div className="w-full sm:text-right">
-                    <p className="font-medium break-words">From: {highFive.sender}</p>
+                    <p className="font-medium break-words">
+                      From: {highFive.sender?.startsWith('npub')
+                        ? (highFive.senderProfileName || highFive.sender)
+                        : highFive.sender}
+                    </p>
                   </div>
                 )}
               </div>

@@ -61,7 +61,8 @@ export class MemStorage implements IStorage {
       sender: insertHighFive.sender ?? null,
       createdAt,
       nostrEventId: null,
-      profileName: insertHighFive.profileName ?? null
+      profileName: insertHighFive.profileName ?? null,
+      senderProfileName: insertHighFive.senderProfileName ?? null
     };
     this.highFives.set(id, highFive);
     return highFive;

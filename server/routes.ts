@@ -42,9 +42,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Include the profile name if provided
       const profileName = req.body.profileName as string | undefined;
       
+      // Look up sender profile name if sender is an npub
+      let senderProfileName: string | undefined;
+      if (validation.data.sender && validation.data.sender.startsWith('npub')) {
+        senderProfileName = await getProfileNameFromNpub(validation.data.sender);
+        console.log(`Found sender profile name: ${senderProfileName || 'None'}`);
+      }
+      
       const highFive = await storage.createHighFive({
         ...validation.data,
-        profileName
+        profileName,
+        senderProfileName
       });
       
       // Get Lightning invoice from request body if available
