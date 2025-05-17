@@ -175,9 +175,10 @@ export async function publishHighFiveToNostr(highFive: {
         event.content += `\n\n## Scan to pay with Bitcoin Lightning ⚡\n\n`;
         event.content += `\`${highFive.lightningInvoice}\``;
         
-        // Add Lightning invoice tags that some clients recognize
-        event.tags.push(['lightning', highFive.lightningInvoice]);
-        event.tags.push(['l', highFive.lightningInvoice]);
+        // Add shortened Lightning invoice tags to avoid tag size limits
+        // Instead of adding the full invoice in the tags, we'll just mention it's available in content
+        event.tags.push(['lightning', 'See content for full invoice']);
+        event.tags.push(['l', 'Lightning payment available']);
         
         console.log('Added Lightning invoice to Nostr post');
       } catch (err) {
