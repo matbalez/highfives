@@ -6,6 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 import axios from 'axios';
 import { createReadStream } from 'fs';
+import { generateAndUploadQRCode } from './blossom-client';
 
 // Setup WebSocket for Node environment
 if (typeof global !== 'undefined') {
