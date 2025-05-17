@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import axios from 'axios';
+import { createReadStream } from 'fs';
 
 // Setup WebSocket for Node environment
 if (typeof global !== 'undefined') {
@@ -56,27 +57,12 @@ export async function publishHighFiveToNostr(highFive: {
     // Format the basic content without the QR code image
     const content = formatHighFiveContent(highFive);
     
-    // Generate QR code for the Lightning invoice
-    let qrCodeImageUrl = '';
+    // Generate QR code directly as base64 data URI for embedding in Nostr post
+    let qrCodeBase64 = '';
     if (highFive.lightningInvoice) {
       try {
-        // Create directory for QR codes if it doesn't exist
-        const publicDir = path.join(process.cwd(), 'public');
-        const qrDir = path.join(publicDir, 'qr-codes');
-        if (!fs.existsSync(publicDir)) {
-          fs.mkdirSync(publicDir, { recursive: true });
-        }
-        if (!fs.existsSync(qrDir)) {
-          fs.mkdirSync(qrDir, { recursive: true });
-        }
-        
-        // Generate a unique filename for the QR code
-        const qrCodeFilename = `${crypto.randomUUID()}.png`;
-        const qrCodePath = path.join(qrDir, qrCodeFilename);
-        
-        // Generate and save the QR code image file
-        await QRCode.toFile(qrCodePath, highFive.lightningInvoice, {
-          type: 'png',
+        // Generate QR code directly as a base64 data URI (inline image)
+        qrCodeBase64 = await QRCode.toDataURL(highFive.lightningInvoice, {
           errorCorrectionLevel: 'H',
           margin: 1,
           width: 300,
@@ -85,11 +71,37 @@ export async function publishHighFiveToNostr(highFive: {
             light: '#ffffff'
           }
         });
+        console.log('Generated QR code as base64 data URI');
         
-        // Create a URL to the QR code image file
-        // We'll use a relative URL to make it work on any Replit URL
-        qrCodeImageUrl = `/qr-codes/${qrCodeFilename}`;
-        console.log(`Generated QR code image at: ${qrCodeImageUrl}`);
+        // Remove the data:image/png;base64, part to get just the base64 content
+        const base64Content = qrCodeBase64.replace(/^data:image\/png;base64,/, '');
+        
+        // Create a separate Nostr event specifically for the image (kind 1063 - direct image)
+        // This is the recommended way to attach images in Nostr
+        const imageEvent: Event = {
+          kind: 1063, // Nostr image kind
+          pubkey: publicKey,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [
+            ['alt', 'QR Code for Lightning payment'],
+            ['m', 'image/png'],
+            ['x', 'attachment']
+          ],
+          content: base64Content,
+          id: '',
+          sig: '',
+        };
+        
+        // Sign and publish the image event first
+        const signedImageEvent = finalizeEvent(imageEvent, hexKey as unknown as Uint8Array);
+        await pool.publish(NOSTR_RELAYS, signedImageEvent);
+        console.log('Published QR code image as a separate Nostr event');
+        
+        // Save the event ID to reference in the main high five post
+        const imageEventId = signedImageEvent.id;
+        
+        // Generate a NIP-23 compliant image URL scheme that Primal understands
+        qrCodeBase64 = `nostr:${imageEventId}`;
       } catch (err) {
         console.error('Error generating QR code:', err);
       }
@@ -119,22 +131,18 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // Add image tag according to NIP-10 and how most clients implement it
-    if (qrCodeImageUrl) {
-      // Generate the full URL using the current host
-      const host = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.replit.app` : 'localhost:5000';
-      const protocol = 'https';
-      const fullQrCodeUrl = `${protocol}://${host}${qrCodeImageUrl}`;
-      console.log(`Full QR code URL: ${fullQrCodeUrl}`);
+    // Add image tags based on the published image event
+    if (qrCodeBase64 && qrCodeBase64.startsWith('nostr:')) {
+      // Extract the event ID
+      const imageEventId = qrCodeBase64.replace('nostr:', '');
+      console.log(`Referencing QR code image event: ${imageEventId}`);
       
-      // Primal and many clients understand this method (content with image URL)
-      nostrEvent.content += `\n\n![QR Code](${fullQrCodeUrl})`;
+      // Add standard Nostr image reference tags
+      // These are the tags that Primal and most clients recognize
+      nostrEvent.tags.push(['e', imageEventId, '', 'image']);
       
-      // Also include the standard Nostr image tags for various clients
-      nostrEvent.tags.push(['url', fullQrCodeUrl]);
-      nostrEvent.tags.push(['image', fullQrCodeUrl]);
-      nostrEvent.tags.push(['img', fullQrCodeUrl]);
-      nostrEvent.tags.push(['r', fullQrCodeUrl]);
+      // For maximum compatibility with all Nostr clients
+      nostrEvent.tags.push(['imeta', imageEventId, 'image/png', 'QR Code for Lightning payment']); 
     }
 
     // Finalize and sign the event
