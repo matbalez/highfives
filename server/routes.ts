@@ -42,26 +42,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Lightning invoice from request body if available
       const lightningInvoice = req.body.lightningInvoice as string | undefined;
 
-      // Use the provided Lightning invoice from the client
-      // This should now be the payment instruction looked up from DNS
-      const effectiveInvoice = lightningInvoice || "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qfj78rhhtjxpghmyqgtmtpntmh2f5fee4zs094je6vly080f7kgsyqsrxwawhx2pdpkm6zy5rsgvvs3w8mpucvudl7dmql4hxg6g8hhjfkkqqvakre23kt02d6nsc5cwrw9dwap3m73jdl7r6nv4nyufh89nc62e0eh9xh6x0a7uqna2g0cty6razaq2kxrrq2wdpfqplvjxdrfzrp4a7dsyhtlgmnrggklu90ck6j3j8wasaq7auqqs2gvv2zuwg446m8p6z5490hyusy";
+      // Only proceed with Nostr publication if we have a valid lightning invoice
+      if (lightningInvoice) {
+        console.log('Using payment instruction for Nostr publication:', { 
+          type: 'from DNS lookup',
+          preview: lightningInvoice.substring(0, 30) + '...'
+        });
 
-      // Log what we're using
-      console.log('Using payment instruction for Nostr publication:', { 
-        type: lightningInvoice ? 'from DNS lookup' : 'fallback',
-        preview: effectiveInvoice.substring(0, 30) + '...'
-      });
-
-      // Silently publish to Nostr without blocking the response
-      publishHighFiveToNostr({
-        recipient: validation.data.recipient,
-        reason: validation.data.reason,
-        sender: validation.data.sender || undefined,
-        lightningInvoice: effectiveInvoice
-      }).catch(error => {
-        // Log error but don't affect the main flow
-        console.error('Error publishing to Nostr (non-blocking):', error);
-      });
+        // Silently publish to Nostr without blocking the response
+        publishHighFiveToNostr({
+          recipient: validation.data.recipient,
+          reason: validation.data.reason,
+          sender: validation.data.sender || undefined,
+          lightningInvoice: lightningInvoice
+        }).catch(error => {
+          // Log error but don't affect the main flow
+          console.error('Error publishing to Nostr (non-blocking):', error);
+        });
+      } else {
+        console.log('Skipping Nostr publication due to missing payment instruction');
+      }
       
       return res.status(201).json(highFive);
     } catch (error) {

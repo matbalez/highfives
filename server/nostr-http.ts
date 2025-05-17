@@ -32,62 +32,32 @@ if (!fs.existsSync(QR_CODE_DIR)) {
 console.log(`Serving QR code images from ${QR_CODE_DIR}`);
 
 // Generate a QR code image, upload to nostr.build, and return URL
-async function generateQRCodeImage(data: string): Promise<string> {
+// Generate a data URL for a QR code that can be directly embedded in Nostr posts
+async function generateQRCodeDataURL(data: string): Promise<string> {
   try {
-    // Generate the QR code to a temporary file
-    const filename = `${crypto.randomUUID()}.png`;
-    const tmpDir = path.join(process.cwd(), 'tmp');
-    
-    // Create tmp directory if it doesn't exist
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
-    
-    const tempFilePath = path.join(tmpDir, filename);
-    
-    // Generate the QR code as a PNG file
-    await QRCode.toFile(tempFilePath, data, {
-      type: 'png',
-      errorCorrectionLevel: 'H',
+    // Generate QR code as data URL for direct embedding
+    const dataUrl = await QRCode.toDataURL(data, {
+      errorCorrectionLevel: 'M',
       margin: 1,
-      width: 300,
+      width: 256,
       color: {
         dark: '#000000',
         light: '#ffffff'
       }
     });
     
-    try {
-      // Upload to nostr.build and get URL
-      const uploadedUrl = await uploadImageToNostrBuild(tempFilePath);
-      console.log(`Uploaded QR code to nostr.build: ${uploadedUrl}`);
-      
-      // Clean up the temporary file
-      if (fs.existsSync(tempFilePath)) {
-        fs.unlinkSync(tempFilePath);
-      }
-      
-      return uploadedUrl;
-    } catch (uploadError) {
-      console.error('Error uploading to nostr.build:', uploadError);
-      
-      // Copy the file to public directory for local hosting as fallback
-      const publicFilename = `${crypto.randomUUID()}.png`;
-      const publicFilePath = path.join(QR_CODE_DIR, publicFilename);
-      fs.copyFileSync(tempFilePath, publicFilePath);
-      
-      // Clean up the temporary file
-      if (fs.existsSync(tempFilePath)) {
-        fs.unlinkSync(tempFilePath);
-      }
-      
-      // Return the local path
-      return `/qr-codes/${publicFilename}`;
-    }
+    console.log('Generated QR code as data URL');
+    return dataUrl;
   } catch (error) {
-    console.error('Error generating QR code:', error);
-    
-    // Fallback to local storage if any error occurs
+    console.error('Error generating QR code data URL:', error);
+    throw error;
+  }
+}
+
+// Also save a local copy for reference
+async function saveQRCodeLocally(data: string): Promise<string> {
+  try {
+    // Generate a unique filename
     const filename = `${crypto.randomUUID()}.png`;
     const filepath = path.join(QR_CODE_DIR, filename);
     
@@ -103,8 +73,13 @@ async function generateQRCodeImage(data: string): Promise<string> {
       }
     });
     
-    // Return the public URL (local fallback)
+    console.log(`Generated QR code image: ${filename}`);
+    
+    // Return the public URL
     return `/qr-codes/${filename}`;
+  } catch (error) {
+    console.error('Error saving QR code locally:', error);
+    throw error;
   }
 }
 
@@ -139,17 +114,10 @@ export async function publishHighFiveToNostr(highFive: {
     const publicKey = getPublicKey(hexKey as unknown as Uint8Array);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
-    // Generate QR code image if we have a lightning invoice
-    let qrCodeUrl = '';
-    if (highFive.lightningInvoice) {
-      qrCodeUrl = await generateQRCodeImage(highFive.lightningInvoice);
-      console.log(`Generated QR code image: ${qrCodeUrl}`);
-    }
+    // Default content without QR code
+    const baseContent = formatHighFiveContent(highFive);
 
-    // Format high five content with the QR code URL
-    const content = formatHighFiveContent(highFive, qrCodeUrl);
-
-    // Create an event
+    // Create the base event
     const event: Event = {
       kind: 1, // Regular note
       pubkey: publicKey,
@@ -157,7 +125,7 @@ export async function publishHighFiveToNostr(highFive: {
       tags: [
         ['t', 'highfive'],
       ],
-      content,
+      content: baseContent,
       id: '',
       sig: ''
     };
@@ -172,10 +140,13 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add QR code to the Nostr post - properly reference the uploaded image
-    if (highFive.lightningInvoice && qrCodeUrl) {
+    // Add Lightning invoice and QR code to the Nostr post if available
+    if (highFive.lightningInvoice) {
       try {
         console.log(`Adding Lightning invoice to Nostr post: ${highFive.lightningInvoice.substring(0, 15)}...`);
+
+        // Save a local copy for display in our app
+        await saveQRCodeLocally(highFive.lightningInvoice);
 
         // For maximum compatibility, include the full Lightning invoice text
         // This allows wallets to detect and extract it directly
@@ -186,20 +157,11 @@ export async function publishHighFiveToNostr(highFive: {
         event.tags.push(['lightning', highFive.lightningInvoice]);
         event.tags.push(['l', highFive.lightningInvoice]);
         
-        // Add the QR code image reference after the text
-        if (qrCodeUrl.startsWith('/')) {
-          // Local file path - need to use absolute URL
-          const hostname = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.replit.dev` : 'https://highfives.replit.app';
-          const fullQrCodeUrl = `${hostname}${qrCodeUrl}`;
-          event.content += `\n\n![QR Code](${fullQrCodeUrl})`;
-          event.tags.push(['image', fullQrCodeUrl]);
-        } else {
-          // Already a full URL from Blossom
-          event.content += `\n\n![QR Code](${qrCodeUrl})`;
-          event.tags.push(['image', qrCodeUrl]);
-        }
+        // Many Nostr clients will automatically generate QR codes from the invoice text
+        // Some will even recognize the lightning: prefix and make it clickable
+        // We don't need to add an image tag since the invoice itself is included
         
-        console.log('Added Lightning invoice and QR code to Nostr post');
+        console.log('Added Lightning invoice to Nostr post');
       } catch (err) {
         console.error('Error adding Lightning details to Nostr post:', err);
         
@@ -224,19 +186,14 @@ export async function publishHighFiveToNostr(highFive: {
   }
 }
 
-// Format high five content with QR code URL
+// Format high five content
 function formatHighFiveContent(
   highFive: {
     recipient: string;
     reason: string;
     sender?: string;
-  },
-  qrCodeUrl: string = ''
+  }
 ): string {
-  // Get the full public URL for the QR code
-  const hostname = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.replit.dev` : 'https://highfives.replit.app';
-  const fullQrCodeUrl = qrCodeUrl ? `${hostname}${qrCodeUrl}` : '';
-  
   const parts = [
     `🖐️ High Five`,
     `To: ${highFive.recipient}`,
@@ -245,12 +202,9 @@ function formatHighFiveContent(
     highFive.reason,
     '',
     'Scan the QR code to send Bitcoin:',
+    '',
+    '#highfives'
   ];
-
-  // The fullQrCodeUrl will be referenced in the 'i' tag instead of in the content
-  
-  parts.push('');
-  parts.push('#highfives');
 
   return parts.join('\n');
 }
