@@ -1,13 +1,13 @@
-import { uploadBlob } from 'blossom-client-sdk/actions/upload';
-import { NostrSigner } from 'blossom-client-sdk/auth';
+import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
-import { getPublicKey, finalizeEvent } from 'nostr-tools';
+import FormData from 'form-data';
 
-// Define the Blossom endpoint
-const BLOSSOM_ENDPOINT = 'https://relay.blossom.band';
+// Define the Blossom endpoints - use the standard API endpoint
+const BLOSSOM_UPLOAD_URL = 'https://api.blossom.band/v1/upload';
+const BLOSSOM_ENDPOINT = 'https://api.blossom.band';
 
 /**
  * Uploads an image to Blossom service
@@ -19,68 +19,93 @@ export async function uploadImageToBlossom(
   imageBuffer: Buffer,
   mimeType: string = 'image/png'
 ): Promise<string> {
+  // Create a temporary file to hold the image for uploading
+  let tempFile = '';
+  
   try {
     console.log('Preparing to upload to Blossom...');
-    console.log(`Uploading ${imageBuffer.length} bytes to Blossom with MIME type ${mimeType}...`);
-    console.log(`Using Blossom endpoint: ${BLOSSOM_ENDPOINT}`);
+    console.log(`Image buffer size: ${imageBuffer.length} bytes, MIME type: ${mimeType}`);
     
     if (!imageBuffer || imageBuffer.length === 0) {
       throw new Error('Empty image buffer provided for Blossom upload');
     }
     
-    // Check if the buffer is valid and looks like an image
-    const header = imageBuffer.slice(0, 8).toString('hex');
-    console.log(`Image file signature (first 8 bytes): ${header}`);
-    
-    // Get the Nostr private key from environment
-    const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
-    if (!privateKeyHex) {
-      throw new Error('NOSTR_PRIVATE_KEY is not set in environment variables');
+    // Create a temporary directory if it doesn't exist
+    const tmpDir = path.join(process.cwd(), 'tmp');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
     }
     
+    // Create a temporary file for the upload
+    tempFile = path.join(tmpDir, `${crypto.randomUUID()}.png`);
+    fs.writeFileSync(tempFile, imageBuffer);
+    console.log(`Image saved to temporary file: ${tempFile}`);
+    
+    // Check if the API key is available
+    const apiKey = process.env.BLOSSOM_API_KEY;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(tempFile));
+    
+    // Add API key if available
+    if (apiKey) {
+      console.log('Using BLOSSOM_API_KEY for authentication');
+      formData.append('api_key', apiKey);
+    } else {
+      console.log('No BLOSSOM_API_KEY found, attempting anonymous upload');
+    }
+    
+    // Send the upload request
+    console.log(`Sending upload request to ${BLOSSOM_UPLOAD_URL}`);
+    const response = await fetch(BLOSSOM_UPLOAD_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    // Always clean up the temporary file
     try {
-      // Create a signer using the private key
-      console.log('Creating Blossom auth signer...');
-      
-      // If the private key is an nsec, decode it to get the hex
-      let hexKey = privateKeyHex;
-      if (privateKeyHex.startsWith('nsec')) {
-        try {
-          const { nip19 } = await import('nostr-tools');
-          const { data } = nip19.decode(privateKeyHex);
-          hexKey = data as string;
-        } catch (e) {
-          console.error('Invalid nsec key:', e);
-          throw new Error('Invalid Nostr private key format');
-        }
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+        console.log(`Cleaned up temporary file: ${tempFile}`);
+        tempFile = ''; // Reset so we don't try to delete it again in the finally block
       }
-      
-      // Create the hash signer using the private key
-      const signer = createBitcoinHashSigner(hexKey);
-      
-      // Use uploadBlob with the auth signer
-      console.log('Uploading to Blossom with auth...');
-      const result = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer, { signer });
-      console.log('Blossom SDK response:', JSON.stringify(result));
-      
-      if (!result || !result.url) {
-        throw new Error('Blossom upload failed: Missing URL in response');
-      }
-      
-      // The result contains the URL of the uploaded image
-      console.log('Blossom upload successful, image URL:', result.url);
-      return result.url;
-    } catch (uploadError) {
-      console.error('Detailed Blossom SDK error:', uploadError);
-      if (uploadError instanceof Error) {
-        console.error('Error name:', uploadError.name);
-        console.error('Error message:', uploadError.message);
-        console.error('Error stack:', uploadError.stack);
-      }
-      throw uploadError;
+    } catch (cleanupError) {
+      console.error('Error cleaning up temporary file:', cleanupError);
+    }
+    
+    // Handle response
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Blossom API error (${response.status}): ${errorText}`);
+      throw new Error(`Blossom upload failed with status ${response.status}: ${errorText}`);
+    }
+    
+    // Parse the response
+    const responseData = await response.json() as any;
+    console.log('Blossom API response:', JSON.stringify(responseData));
+    
+    // Check for success and URL
+    if (responseData && responseData.success && responseData.url) {
+      console.log('Blossom upload successful, URL:', responseData.url);
+      return responseData.url;
+    } else {
+      console.error('Blossom API responded without a URL:', responseData);
+      throw new Error('Blossom upload succeeded but no URL was returned');
     }
   } catch (error) {
     console.error('Error uploading to Blossom:', error);
+    
+    // Cleanup temporary file if it exists
+    if (tempFile && fs.existsSync(tempFile)) {
+      try {
+        fs.unlinkSync(tempFile);
+        console.log(`Cleaned up temporary file after error: ${tempFile}`);
+      } catch (cleanupError) {
+        console.error('Failed to clean up temporary file:', cleanupError);
+      }
+    }
+    
     throw new Error(`Failed to upload image to Blossom: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -91,69 +116,28 @@ export async function uploadImageToBlossom(
  * @returns Promise resolving to the URL of the uploaded QR code image
  */
 export async function generateAndUploadQRCode(data: string): Promise<string> {
-  let filename = '';
+  let buffer: Buffer | null = null;
   
   try {
     console.log('Starting QR code generation process for data with length:', data.length);
     
-    // Create a temporary directory if it doesn't exist
-    const tmpDir = path.join(process.cwd(), 'tmp');
-    if (!fs.existsSync(tmpDir)) {
-      console.log(`Creating temporary directory: ${tmpDir}`);
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
-    
-    // Generate a temporary filename
-    const uuid = crypto.randomUUID();
-    filename = path.join(tmpDir, `${uuid}.png`);
-    console.log(`Using temporary filename: ${filename}`);
-    
-    // Generate the QR code as a PNG file
-    const qrOptions = {
-      type: 'png',
+    // Generate QR code directly to buffer
+    console.log('Generating QR code to buffer...');
+    buffer = await QRCode.toBuffer(data, {
       errorCorrectionLevel: 'H',
       margin: 1,
       width: 400,
-      color: {
-        dark: '#000000',
-        light: '#ffffff'
-      }
-    };
+    });
     
-    console.log('Generating QR code with options:', JSON.stringify(qrOptions));
-    await QRCode.toFile(filename, data, qrOptions);
+    console.log(`Generated QR code buffer with size: ${buffer.length} bytes`);
     
-    console.log(`QR code image successfully generated at: ${filename}`);
-    
-    // Check file existence and size
-    if (!fs.existsSync(filename)) {
-      throw new Error(`QR code file was not created at ${filename}`);
-    }
-    
-    const stats = fs.statSync(filename);
-    console.log(`QR code file size: ${stats.size} bytes`);
-    
-    if (stats.size === 0) {
-      throw new Error('Generated QR code file is empty');
-    }
-    
-    // Read the file into a buffer
-    console.log('Reading file into buffer...');
-    const buffer = fs.readFileSync(filename);
-    console.log(`Buffer created with size: ${buffer.length} bytes`);
-    
-    if (buffer.length === 0) {
-      throw new Error('QR code buffer is empty');
+    if (!buffer || buffer.length === 0) {
+      throw new Error('Generated QR code buffer is empty');
     }
     
     // Upload the buffer to Blossom
-    console.log('Starting upload to Blossom...');
+    console.log('Uploading QR code to Blossom...');
     const imageUrl = await uploadImageToBlossom(buffer, 'image/png');
-    
-    // Clean up the temporary file
-    console.log(`Cleaning up temporary file: ${filename}`);
-    fs.unlinkSync(filename);
-    
     console.log(`QR code successfully uploaded to Blossom: ${imageUrl}`);
     return imageUrl;
   } catch (error) {
@@ -166,17 +150,36 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
       console.error('Error stack:', error.stack);
     }
     
-    // If the file was created but there was an error later, try to clean up
-    if (filename && fs.existsSync(filename)) {
-      try {
-        console.log(`Attempting to clean up temporary file after error: ${filename}`);
-        fs.unlinkSync(filename);
-        console.log('Temporary file cleanup successful');
-      } catch (cleanupError) {
-        console.error('Error cleaning up temporary file:', cleanupError);
+    // Fallback to local storage if Blossom upload fails
+    try {
+      console.log('Falling back to local QR code storage...');
+      // Make sure we have a buffer
+      if (!buffer) {
+        buffer = await QRCode.toBuffer(data, {
+          errorCorrectionLevel: 'H',
+          margin: 1,
+          width: 400,
+        });
+        console.log(`Generated fallback QR code buffer with size: ${buffer.length} bytes`);
       }
+      
+      // Ensure public directory exists
+      const publicPath = path.join(process.cwd(), 'public', 'qr-codes');
+      if (!fs.existsSync(publicPath)) {
+        fs.mkdirSync(publicPath, { recursive: true });
+      }
+      
+      // Save the buffer to a local file
+      const filename = `qrcode-${crypto.randomUUID()}.png`;
+      const filePath = path.join(publicPath, filename);
+      fs.writeFileSync(filePath, buffer);
+      console.log(`Saved QR code locally at: ${filePath}`);
+      
+      // Return a relative URL that can be referenced in the frontend
+      return `/qr-codes/${filename}`;
+    } catch (fallbackError) {
+      console.error('Even fallback QR code generation failed:', fallbackError);
+      throw new Error(`Failed to generate and save QR code: ${error instanceof Error ? error.message : String(error)}`);
     }
-    
-    throw error;
   }
 }
