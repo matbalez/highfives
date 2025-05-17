@@ -1,4 +1,4 @@
-import { SimplePool, finalizeEvent, getPublicKey, nip19, getEventHash, type Event } from 'nostr-tools';
+import { SimplePool, finalizeEvent, getPublicKey, nip19, type Event } from 'nostr-tools';
 import WebSocket from 'ws';
 import * as QRCode from 'qrcode';
 import path from 'path';
@@ -90,13 +90,13 @@ export async function publishHighFiveToNostr(highFive: {
   reason: string;
   sender?: string;
   lightningInvoice?: string;
-}): Promise<string | null> {
+}): Promise<void> {
   try {
     // Get private key from environment variables
     const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
     if (!privateKeyHex) {
       console.error('Cannot publish to Nostr: NOSTR_PRIVATE_KEY is not set');
-      return null;
+      return;
     }
 
     // Handle nsec format if needed
@@ -107,14 +107,12 @@ export async function publishHighFiveToNostr(highFive: {
         hexKey = data as string;
       } catch (e) {
         console.error('Invalid nsec key:', e);
-        return null;
+        return;
       }
     }
-    
-    console.log('Successfully processed Nostr private key');
 
     // Get public key from private key
-    const publicKey = getPublicKey(hexKey);
+    const publicKey = getPublicKey(hexKey as unknown as Uint8Array);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
     // Default content without QR code
@@ -191,50 +189,19 @@ export async function publishHighFiveToNostr(highFive: {
     }
 
     // Sign the event
-    try {
-      // Use finalizeEvent to sign the event properly
-      // Convert hex key to Uint8Array if needed
-      const keyArray = hexToUint8Array(hexKey);
-      const signedEvent = finalizeEvent(event, keyArray);
-      
-      console.log(`Generated Nostr event with ID: ${signedEvent.id}`);
-      
-      // Publish to relays
-      const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
-      
-      // Wait for at least one successful publication
-      await Promise.any(pubs);
-      
-      console.log(`High Five successfully published to Nostr with ID: ${signedEvent.id}`);
-      
-      // Return the event ID
-      return signedEvent.id;
-    } catch (signError) {
-      console.error('Error signing or publishing Nostr event:', signError);
-      return null;
-    }
+    const signedEvent = finalizeEvent(event, hexKey as unknown as Uint8Array);
+
+    // Publish to relays
+    const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
+    
+    // Wait for at least one successful publication
+    await Promise.any(pubs);
+    
+    console.log('High Five successfully published to Nostr');
   } catch (error) {
     // Don't let Nostr errors affect the main application
     console.error('Error publishing to Nostr:', error);
-    return null;
   }
-}
-
-// Helper function to convert hex string to Uint8Array
-function hexToUint8Array(hexString: string): Uint8Array {
-  // Remove 0x prefix if present
-  const hex = hexString.startsWith('0x') ? hexString.slice(2) : hexString;
-  
-  // Create byte array
-  const len = hex.length / 2;
-  const bytes = new Uint8Array(len);
-  
-  // Convert hex to bytes
-  for (let i = 0; i < len; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-  }
-  
-  return bytes;
 }
 
 // Format high five content
