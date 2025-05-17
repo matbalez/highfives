@@ -60,6 +60,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lightningInvoice: lightningInvoice
           });
           
+          // Update the high five with the Nostr event ID
+          if (nostrEventId) {
+            // Since we're using an in-memory store, we need to update the object manually
+            const storedHighFive = await storage.getHighFive(highFive.id);
+            if (storedHighFive) {
+              storedHighFive.nostrEventId = nostrEventId;
+              // If this were a real database, we'd save it here
+            }
+          }
+          
           // Add the Nostr event ID to the response
           return res.status(201).json({
             ...highFive,

@@ -130,8 +130,8 @@ export default function HighFiveForm() {
       // Use the original reason, we'll pass the lightning invoice separately
       const enhancedReason = pendingHighFive.reason;
       
-      // Send to API with lightning invoice
-      await apiRequest(
+      // Send to API with lightning invoice and get the response including Nostr event ID
+      const response = await apiRequest(
         'POST',
         '/api/high-fives', 
         {
@@ -148,8 +148,11 @@ export default function HighFiveForm() {
       // Close payment modal
       setPaymentModalOpen(false);
       
-      // Show success screen with details
-      setSuccessDetails(pendingHighFive);
+      // Show success screen with details, including Nostr event ID if available
+      setSuccessDetails({
+        ...pendingHighFive,
+        nostrEventId: response?.nostrEventId
+      });
       
       // Clear pending high five
       setPendingHighFive(null);
