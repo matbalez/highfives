@@ -26,8 +26,16 @@ export async function lookupPaymentInstructions(btag: string): Promise<string | 
     const dnsRecord = `${user}.user._bitcoin-payment.${domain}`;
     console.log(`Looking up TXT record for: ${dnsRecord}`);
 
-    // Query TXT record
-    const txtRecords = await resolveTxt(dnsRecord);
+    // Set a timeout for DNS resolution
+    const dnsPromise = resolveTxt(dnsRecord);
+    
+    // Create a timeout promise that rejects after 5 seconds
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('DNS lookup timed out after 5 seconds')), 5000);
+    });
+    
+    // Race the DNS resolution against the timeout
+    const txtRecords = await Promise.race([dnsPromise, timeoutPromise]) as string[][];
     
     // BIP-353 payment instructions are stored in a single TXT record
     if (txtRecords && txtRecords.length > 0) {
@@ -58,6 +66,17 @@ export async function lookupPaymentInstructions(btag: string): Promise<string | 
     return null;
   } catch (error) {
     console.error('Error looking up payment instructions:', error);
+    
+    // Check for specific error types and provide more detailed logging
+    if (error instanceof Error) {
+      if (error.message.includes('ENOTFOUND') || error.message.includes('SERVFAIL')) {
+        console.error('DNS server could not be reached or domain does not exist');
+      } else if (error.message.includes('timed out')) {
+        console.error('DNS lookup timed out - services might be temporarily unavailable');
+      }
+    }
+    
+    // In a real production environment, we would implement retry logic here
     return null;
   }
 }

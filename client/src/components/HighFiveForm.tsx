@@ -87,11 +87,30 @@ export default function HighFiveForm() {
       }
     } catch (error) {
       console.error("Error fetching payment instructions:", error);
-      toast({
-        title: "Payment Lookup Error",
-        description: "No payment instructions found for this recipient. Please verify the recipient is a valid Bitcoin address.",
-        variant: "destructive",
-      });
+      
+      // Check if it's a network error vs. no payment instructions
+      const isServerError = error.response && (error.response.status >= 500 || error.response.status === 0);
+      const isNotFoundError = error.response && error.response.status === 404;
+      
+      if (isServerError) {
+        toast({
+          title: "Service Temporarily Unavailable",
+          description: "We're having trouble connecting to the payment network. Please try again in a few moments.",
+          variant: "destructive",
+        });
+      } else if (isNotFoundError) {
+        toast({
+          title: "Payment Instructions Not Found",
+          description: "No payment instructions found for this recipient. Please verify the recipient address is correct.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Payment Lookup Error",
+          description: "There was a problem verifying this recipient. Please check the address and try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsVerifyingPayment(false);
     }
