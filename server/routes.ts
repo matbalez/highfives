@@ -11,7 +11,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import express from 'express';
 import { lookupPaymentInstructions } from "./dns-util";
 import { getLightningAddressFromNpub } from "./nostr-profile";
-import { getLnurlFromLightningAddress } from "./lightning-tool";
+import { getLnurlFromLightningAddress, getInvoiceFromLightningAddress } from "./lightning-tool";
 
 // Create public directory and qr-codes subdirectory if they don't exist
 const publicDir = path.join(process.cwd(), 'public');
@@ -113,23 +113,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Found Lightning Address for npub: ${lightningAddress}`);
           
-          // Get LNURL from Lightning Address
-          const lnurlData = await getLnurlFromLightningAddress(lightningAddress);
+          // Generate an actual Lightning invoice (payment request)
+          const amount = 1000; // 1000 sats for the High Five
+          const comment = "High Five Payment";
+          const invoice = await getInvoiceFromLightningAddress(lightningAddress, amount, comment);
           
-          if (!lnurlData) {
-            console.log(`No LNURL data found for Lightning Address: ${lightningAddress}`);
+          if (!invoice) {
+            console.log(`Failed to generate invoice for Lightning Address: ${lightningAddress}`);
             return res.status(404).json({
-              message: "Payment instructions not found",
-              details: "Could not retrieve LNURL from the Lightning Address"
+              message: "Payment generation failed",
+              details: "Could not generate a Lightning invoice for this address"
             });
           }
           
-          console.log(`Successfully retrieved LNURL for Lightning Address: ${lightningAddress}`);
+          console.log(`Successfully generated Lightning invoice for ${lightningAddress}`);
           
           return res.status(200).json({
             btag,
-            paymentInstructions: lnurlData,
-            paymentType: 'lnurl',
+            paymentInstructions: invoice,
+            paymentType: 'bolt11',
             lightningAddress
           });
         } catch (error) {
