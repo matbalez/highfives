@@ -11,7 +11,6 @@ interface ServerHighFive {
   reason: string;
   sender: string | null;
   createdAt: string;
-  nostrEventId?: string;
 }
 
 export default function HighFivesList() {
