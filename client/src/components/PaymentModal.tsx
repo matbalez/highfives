@@ -98,11 +98,6 @@ export default function PaymentModal({
               <div className="text-center mt-4 text-sm text-gray-600">
                 Scan with a BOLT12 wallet
               </div>
-              
-              {/* Small indicator showing where the payment instruction was found */}
-              <div className="mt-2 text-xs text-gray-500 flex items-center">
-                <span className="mr-1">✓</span> Payment instructions found for {highFiveDetails.recipient}
-              </div>
             </>
           )}
           
