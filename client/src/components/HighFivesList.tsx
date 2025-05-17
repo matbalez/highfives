@@ -14,6 +14,7 @@ interface ServerHighFive {
   nostrEventId?: string;
   profileName?: string;
   senderProfileName?: string;
+  qrCodePath?: string;
 }
 
 export default function HighFivesList() {
@@ -101,6 +102,17 @@ export default function HighFivesList() {
                   </div>
                 )}
               </div>
+              
+              {/* QR Code if available */}
+              {highFive.qrCodePath && (
+                <div className="mt-4 mb-2 flex justify-center">
+                  <img 
+                    src={highFive.qrCodePath} 
+                    alt="QR Code for Bitcoin Lightning payment" 
+                    className="w-48 h-48 object-contain" 
+                  />
+                </div>
+              )}
               
               {/* Nostr link if available */}
               {highFive.nostrEventId && (

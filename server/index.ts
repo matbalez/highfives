@@ -45,6 +45,7 @@ app.use((req, res, next) => {
     log("Database migrations completed successfully");
   } catch (error) {
     console.error("Database migration failed:", error);
+    // Continue execution even if migrations fail
   }
   
   const server = await registerRoutes(app);

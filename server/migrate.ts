@@ -19,7 +19,8 @@ async function runMigrations() {
     console.log('Migrations completed successfully');
   } catch (error) {
     // Check if it's just a "column already exists" error, which we can safely ignore
-    if (error.message && error.message.includes('column "qr_code_path" of relation "high_fives" already exists')) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes('column "qr_code_path" of relation "high_fives" already exists')) {
       console.log('Column qr_code_path already exists, continuing...');
     } else {
       console.error('Error running migrations:', error);
