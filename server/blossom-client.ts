@@ -6,8 +6,8 @@ import fetch from 'node-fetch';
 import FormData from 'form-data';
 
 // Define the Blossom API endpoints
-const BLOSSOM_RELAY_URL = 'https://relay.blossom.band'; 
-const BLOSSOM_UPLOAD_API = 'https://nostr.build/upload.php'; // Using nostr.build as a fallback
+const BLOSSOM_SERVER_URL = 'https://relay.blossom.band';
+const BLOSSOM_UPLOAD_API = 'https://api.blossom.band/v1/upload';
 
 /**
  * Uploads an image to Blossom service
