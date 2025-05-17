@@ -3,4 +3,5 @@ export interface HighFiveDetails {
   reason: string;
   sender?: string;
   nostrEventId?: string;
+  profileName?: string;
 }

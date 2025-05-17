@@ -74,7 +74,7 @@ export default function HighFivesList() {
               <div>
                 <p className="text-xl font-bold break-words">
                   {highFive.recipient.startsWith('npub') 
-                    ? highFive.recipient 
+                    ? (highFive.profileName || highFive.recipient)
                     : <><span className="text-black">₿</span>{highFive.recipient}</>}
                 </p>
               </div>

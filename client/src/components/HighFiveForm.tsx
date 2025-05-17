@@ -84,6 +84,8 @@ export default function HighFiveForm() {
           recipient: values.recipient,
           reason: enhancedReason,
           sender: values.sender || undefined,
+          // If this is an npub with a profile name, include it
+          profileName: response.data.profileName
         });
         
         // Open payment modal

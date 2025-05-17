@@ -157,3 +157,76 @@ function extractLightningAddress(event: Event): string | null {
     return null;
   }
 }
+
+/**
+ * Extract profile information from a Nostr metadata event
+ * @param event The Nostr event (kind 0) to extract profile info from
+ * @returns Object containing profile name and other metadata
+ */
+export function extractProfileInfo(event: Event): { name?: string, displayName?: string } {
+  try {
+    // Parse the content as JSON
+    const content = JSON.parse(event.content);
+    
+    return {
+      name: content.name || undefined,
+      displayName: content.display_name || content.displayName || undefined
+    };
+  } catch (error) {
+    console.error('Error parsing profile content:', error);
+    return {};
+  }
+}
+
+/**
+ * Get profile name from a Nostr npub
+ * @param npub The npub to look up
+ * @returns The profile name if found, or null
+ */
+export async function getProfileNameFromNpub(npub: string): Promise<string | null> {
+  try {
+    // Decode the npub to get the hex public key
+    let pubkey: string;
+    try {
+      const decoded = nip19.decode(npub);
+      if (decoded.type !== 'npub') {
+        console.error('Invalid npub format');
+        return null;
+      }
+      pubkey = decoded.data as string;
+    } catch (e) {
+      console.error('Error decoding npub:', e);
+      return null;
+    }
+
+    // Set up Nostr pool
+    const pool = setupNostrPool(PROFILE_RELAYS);
+
+    // Look up the profile metadata (kind 0) events
+    console.log(`Looking up profile metadata for pubkey: ${pubkey}`);
+    const profileEvents = await getProfileEvents(pool, pubkey);
+
+    if (!profileEvents.length) {
+      console.log('No profile metadata found');
+      pool.close(PROFILE_RELAYS);
+      return null;
+    }
+
+    // Sort by created_at to get the most recent event
+    profileEvents.sort((a, b) => b.created_at - a.created_at);
+    const latestProfile = profileEvents[0];
+
+    // Extract profile info from metadata
+    const profileInfo = extractProfileInfo(latestProfile);
+    const profileName = profileInfo.displayName || profileInfo.name;
+    console.log(`Profile name extracted: ${profileName || 'No name found'}`);
+
+    // Clean up pool
+    pool.close(PROFILE_RELAYS);
+    
+    return profileName || null;
+  } catch (error) {
+    console.error('Error getting profile name from npub:', error);
+    return null;
+  }
+}

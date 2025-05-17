@@ -132,6 +132,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Found Lightning Address for npub: ${lightningAddress}`);
           
+          // Also get profile name if available
+          const { getProfileNameFromNpub } = require('./nostr-profile');
+          const profileName = await getProfileNameFromNpub(btag);
+          
           // Generate an actual Lightning invoice (payment request)
           const amount = 21000; // 21,000 sats for the High Five
           const comment = "High Five Payment";
@@ -151,7 +155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             btag,
             paymentInstructions: invoice,
             paymentType: 'bolt11',
-            lightningAddress
+            lightningAddress,
+            profileName: profileName || undefined
           });
         } catch (error) {
           console.error(`Error processing npub ${btag}:`, error);
