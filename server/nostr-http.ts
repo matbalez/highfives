@@ -194,10 +194,34 @@ function formatHighFiveContent(
     sender?: string;
   }
 ): string {
+  // Format sender with nostr mention if it's an npub
+  let senderDisplay = 'From: Anonymous';
+  if (highFive.sender) {
+    if (highFive.sender.startsWith('npub')) {
+      // Format as a proper Nostr mention with @
+      senderDisplay = `From: @${highFive.sender}`;
+      
+      // Add a log to track that we're adding proper @mentions
+      console.log(`Adding @mention for sender: ${highFive.sender}`);
+    } else {
+      senderDisplay = `From: ${highFive.sender}`;
+    }
+  }
+  
+  // Format recipient with nostr mention if it's an npub
+  let recipientDisplay = `To: ${highFive.recipient}`;
+  if (highFive.recipient.startsWith('npub')) {
+    // Format as a proper Nostr mention with @
+    recipientDisplay = `To: @${highFive.recipient}`;
+    
+    // Add a log to track that we're adding proper @mentions
+    console.log(`Adding @mention for recipient: ${highFive.recipient}`);
+  }
+
   const parts = [
     `🖐️ High Five`,
-    `To: ${highFive.recipient}`,
-    highFive.sender ? `From: ${highFive.sender}` : 'From: Anonymous',
+    recipientDisplay,
+    senderDisplay,
     '',
     highFive.reason,
     '',
