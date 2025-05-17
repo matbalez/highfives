@@ -46,47 +46,19 @@ export default function HighFiveForm() {
     },
   });
 
-  async function handleFormSubmit(values: z.infer<typeof formSchema>) {
+  function handleFormSubmit(values: z.infer<typeof formSchema>) {
     // Append two line breaks and high five emojis to the reason
     const enhancedReason = `${values.reason}\n\n✋✋✋`;
     
-    // First, verify payment instructions exist before showing payment modal
-    try {
-      // Show loading state
-      form.formState.isSubmitting = true;
-      
-      // Verify payment instructions exist
-      const btag = values.recipient;
-      const response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(btag)}`);
-      
-      if (response.data && response.data.paymentInstructions) {
-        // Proceed only if valid payment instructions are found
-        setPendingHighFive({
-          recipient: values.recipient,
-          reason: enhancedReason,
-          sender: values.sender || undefined,
-        });
-        
-        // Open payment modal
-        setPaymentModalOpen(true);
-      } else {
-        // This should never happen but handling just in case
-        toast({
-          title: "Payment Lookup Error",
-          description: "No payment instructions found for this recipient. Please check the btag format.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching payment instructions:", error);
-      toast({
-        title: "Payment Lookup Error",
-        description: "No payment instructions found for this recipient. Please verify the btag format.",
-        variant: "destructive",
-      });
-    } finally {
-      form.formState.isSubmitting = false;
-    }
+    // Store the high five details and show payment modal
+    setPendingHighFive({
+      recipient: values.recipient,
+      reason: enhancedReason,
+      sender: values.sender || undefined,
+    });
+    
+    // Open payment modal - the modal will handle the payment instruction lookup
+    setPaymentModalOpen(true);
   }
 
   async function sendHighFive(lightningInvoice: string) {

@@ -38,24 +38,30 @@ export default function PaymentModal({
       // Call our API to look up payment instructions
       axios.get(`/api/payment-instructions?btag=${encodeURIComponent(btag)}`)
         .then(response => {
-          console.log("Payment instructions lookup successful", response.data);
-          setPaymentInstructions(response.data.paymentInstructions);
-          setIsLoading(false);
+          if (response.data && response.data.paymentInstructions) {
+            console.log("Payment instructions lookup successful", response.data);
+            setPaymentInstructions(response.data.paymentInstructions);
+            setIsLoading(false);
+          } else {
+            // This shouldn't happen based on the API design but handling just in case
+            throw new Error("Invalid payment instructions format");
+          }
         })
         .catch(err => {
           console.error("Error fetching payment instructions:", err);
-          setError("Could not find payment instructions for this recipient. Please check the btag format.");
+          setError("Could not find payment instructions for this recipient.");
           setIsLoading(false);
-          // Close the modal after a short delay
+          
+          // Close the modal after showing the error briefly
           setTimeout(() => {
             onClose();
             
             toast({
               title: "Payment Lookup Error",
-              description: "No payment instructions found for this recipient. Please verify the btag format.",
+              description: "No payment instructions found for this recipient. Please verify the recipient is a valid Bitcoin address.",
               variant: "destructive",
             });
-          }, 2000);
+          }, 1500);
         });
     }
   }, [isOpen, highFiveDetails.recipient, toast, onClose]);
