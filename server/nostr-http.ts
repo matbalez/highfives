@@ -115,6 +115,24 @@ export async function publishHighFiveToNostr(highFive: {
         console.error('Invalid npub recipient:', e);
       }
     }
+    
+    // Add image tag for the QR code if available
+    if (highFive.lightningInvoice && qrCodeUrl) {
+      // Get the full URL for the QR code with the correct protocol
+      // Make sure we have a publicly accessible URL
+      const baseUrl = process.env.REPL_SLUG 
+        ? `https://${process.env.REPL_SLUG}.replit.dev` 
+        : (process.env.REPLIT_APP_URL || 'https://highfives.replit.app');
+      
+      const fullQrCodeUrl = `${baseUrl}${qrCodeUrl}`;
+      console.log(`Attaching QR code image to Nostr post: ${fullQrCodeUrl}`);
+      
+      // Add an explicit image URL in the content - this is for maximum compatibility
+      event.content += `\n\n![QR Code](${fullQrCodeUrl})`;
+      
+      // Also add the 'i' tag for image-aware Nostr clients (NIP-94 compatible)
+      event.tags.push(['i', fullQrCodeUrl, 'image/png', 'QR Code for Lightning payment']);
+    }
 
     // Sign the event
     const signedEvent = finalizeEvent(event, hexKey as unknown as Uint8Array);
@@ -150,17 +168,13 @@ function formatHighFiveContent(
     `To: ${highFive.recipient}`,
     highFive.sender ? `From: ${highFive.sender}` : 'From: Anonymous',
     '',
-    highFive.reason
+    highFive.reason,
+    '',
+    'Scan the QR code to send Bitcoin:',
   ];
 
-  if (fullQrCodeUrl) {
-    parts.push('');
-    parts.push('Scan this QR code to send Bitcoin:');
-    parts.push('');
-    // Use a simple image link that all clients should support
-    parts.push(`![QR Code](${fullQrCodeUrl})`);
-  }
-
+  // The fullQrCodeUrl will be referenced in the 'i' tag instead of in the content
+  
   parts.push('');
   parts.push('#highfives');
 
