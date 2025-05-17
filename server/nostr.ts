@@ -1,10 +1,10 @@
 import { SimplePool, getEventHash, getPublicKey, finalizeEvent, nip19, type Event } from 'nostr-tools';
 import WebSocket from 'ws';
-import { generateQRCodeDataURL } from './qrcode-util';
 import * as QRCode from 'qrcode';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import axios from 'axios';
 
 // Setup WebSocket for Node environment
 if (typeof global !== 'undefined') {
@@ -56,9 +56,48 @@ export async function publishHighFiveToNostr(highFive: {
     // Format the basic content without the QR code image
     const content = formatHighFiveContent(highFive);
     
-    // Create a kind 1 event (text note)
-    const textEvent: Event = {
-      kind: 1, 
+    // Generate QR code for the Lightning invoice
+    let qrCodeImageUrl = '';
+    if (highFive.lightningInvoice) {
+      try {
+        // Create directory for QR codes if it doesn't exist
+        const publicDir = path.join(process.cwd(), 'public');
+        const qrDir = path.join(publicDir, 'qr-codes');
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
+        }
+        if (!fs.existsSync(qrDir)) {
+          fs.mkdirSync(qrDir, { recursive: true });
+        }
+        
+        // Generate a unique filename for the QR code
+        const qrCodeFilename = `${crypto.randomUUID()}.png`;
+        const qrCodePath = path.join(qrDir, qrCodeFilename);
+        
+        // Generate and save the QR code image file
+        await QRCode.toFile(qrCodePath, highFive.lightningInvoice, {
+          type: 'png',
+          errorCorrectionLevel: 'H',
+          margin: 1,
+          width: 300,
+          color: {
+            dark: '#000000',
+            light: '#ffffff'
+          }
+        });
+        
+        // Create a URL to the QR code image file
+        // We'll use a relative URL to make it work on any Replit URL
+        qrCodeImageUrl = `/qr-codes/${qrCodeFilename}`;
+        console.log(`Generated QR code image at: ${qrCodeImageUrl}`);
+      } catch (err) {
+        console.error('Error generating QR code:', err);
+      }
+    }
+    
+    // Create a kind 1 event (text note) with image
+    const nostrEvent: Event = {
+      kind: 1, // Standard text note
       pubkey: publicKey,
       created_at: Math.floor(Date.now() / 1000),
       tags: [
@@ -74,31 +113,33 @@ export async function publishHighFiveToNostr(highFive: {
     if (highFive.recipient.startsWith('npub')) {
       try {
         const { data } = nip19.decode(highFive.recipient);
-        textEvent.tags.push(['p', data as string]);
+        nostrEvent.tags.push(['p', data as string]);
       } catch (e) {
         console.error('Invalid npub recipient:', e);
       }
     }
 
-    // Use NIP-57 compatible Lightning zap tags
-    if (highFive.lightningInvoice) {
-      // Add proper zap tags for Lightning invoice
-      textEvent.tags.push(['zap', '']);
-      textEvent.tags.push(['bolt11', highFive.lightningInvoice]);
+    // Add image tag according to NIP-10 and how most clients implement it
+    if (qrCodeImageUrl) {
+      // Generate the full URL using the current host
+      const host = process.env.REPL_SLUG ? `${process.env.REPL_SLUG}.replit.app` : 'localhost:5000';
+      const protocol = 'https';
+      const fullQrCodeUrl = `${protocol}://${host}${qrCodeImageUrl}`;
+      console.log(`Full QR code URL: ${fullQrCodeUrl}`);
       
-      // Add the raw invoice text directly to the content for clients to render as QR code
-      const invoiceSection = [
-        '',
-        'Lightning Payment:',
-        '',
-        highFive.lightningInvoice
-      ];
-      textEvent.content += invoiceSection.join('\n');
+      // Primal and many clients understand this method (content with image URL)
+      nostrEvent.content += `\n\n![QR Code](${fullQrCodeUrl})`;
+      
+      // Also include the standard Nostr image tags for various clients
+      nostrEvent.tags.push(['url', fullQrCodeUrl]);
+      nostrEvent.tags.push(['image', fullQrCodeUrl]);
+      nostrEvent.tags.push(['img', fullQrCodeUrl]);
+      nostrEvent.tags.push(['r', fullQrCodeUrl]);
     }
 
-    // Finalize and send the main event
-    const signedTextEvent = finalizeEvent(textEvent, hexKey as unknown as Uint8Array);
-    const pubs = pool.publish(NOSTR_RELAYS, signedTextEvent);
+    // Finalize and sign the event
+    const signedEvent = finalizeEvent(nostrEvent, hexKey as unknown as Uint8Array);
+    const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
     
     // Wait for at least one relay to accept the event
     await Promise.any(pubs);
@@ -129,7 +170,7 @@ function formatHighFiveContent(
     '',
     '👇👇👇',
     '',
-    'Scan this QR code to send Bitcoin:',
+    'Scan the QR code to send Bitcoin: ',
     '',
     '#highfives'
   ];

@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { WebSocketServer } from 'ws';
+import express from 'express';
 
 // Create public directory and qr-codes subdirectory if they don't exist
 const publicDir = path.join(process.cwd(), 'public');
@@ -71,30 +72,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve static QR code images
-  app.use('/qr-codes', (req: Request, res: Response, next: NextFunction) => {
-    // Express sendFile options
-    const options = {
-      root: qrCodesDir,
-      dotfiles: 'deny' as 'deny' | 'allow' | 'ignore',
-      headers: {
-        'Cache-Control': 'public, max-age=31536000',
-        'Content-Type': 'image/png'
-      }
-    };
-
-    const fileName = req.path.substring(1);
-    if (fileName && /^[a-zA-Z0-9_-]+\.png$/.test(fileName)) {
-      return res.sendFile(fileName, options, (err) => {
-        if (err) {
-          console.error(`Error serving QR code: ${err.message}`);
-          next();
-        }
-      });
-    } else {
-      next();
+  // Serve static QR code images from public directory
+  app.use('/qr-codes', express.static(qrCodesDir, {
+    index: false,
+    setHeaders: (res) => {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
     }
-  });
+  }));
+  
+  console.log(`Serving QR code images from ${qrCodesDir}`);
 
   const httpServer = createServer(app);
 
