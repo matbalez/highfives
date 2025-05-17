@@ -116,22 +116,59 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add image tag for the QR code if available
+    // Add QR code image to the Nostr post
     if (highFive.lightningInvoice && qrCodeUrl) {
-      // Get the full URL for the QR code with the correct protocol
-      // Make sure we have a publicly accessible URL
-      const baseUrl = process.env.REPL_SLUG 
-        ? `https://${process.env.REPL_SLUG}.replit.dev` 
-        : (process.env.REPLIT_APP_URL || 'https://highfives.replit.app');
-      
-      const fullQrCodeUrl = `${baseUrl}${qrCodeUrl}`;
-      console.log(`Attaching QR code image to Nostr post: ${fullQrCodeUrl}`);
-      
-      // Add an explicit image URL in the content - this is for maximum compatibility
-      event.content += `\n\n![QR Code](${fullQrCodeUrl})`;
-      
-      // Also add the 'i' tag for image-aware Nostr clients (NIP-94 compatible)
-      event.tags.push(['i', fullQrCodeUrl, 'image/png', 'QR Code for Lightning payment']);
+      try {
+        // Extract the QR code filename from the URL path
+        const qrCodeFilename = path.basename(qrCodeUrl);
+        const qrCodeFilePath = path.join(QR_CODE_DIR, qrCodeFilename);
+        
+        // Log what we're doing (without the full base64 content)
+        console.log(`Using QR code image from: ${qrCodeFilePath}`);
+        
+        // Read the QR code image file directly
+        const qrCodeBuffer = fs.readFileSync(qrCodeFilePath);
+        
+        // Convert to base64 for embedding directly in the Nostr post
+        const base64Image = qrCodeBuffer.toString('base64');
+        
+        // Create a separate Nostr event specifically for the image (kind 1063 - file attachment)
+        // This follows NIP-94 for file attachments in Nostr
+        const imageEvent = {
+          kind: 1063, // File attachment kind
+          pubkey: publicKey,
+          created_at: Math.floor(Date.now() / 1000),
+          tags: [
+            ['alt', 'QR Code for Lightning payment'],
+            ['m', 'image/png'],
+            ['size', qrCodeBuffer.length.toString()],
+            ['dim', '300x300'],
+            ['blurhash', 'LRN%NmxutRofIVayt7ay00WB~qWB']
+          ],
+          content: base64Image,
+          id: '',
+          sig: ''
+        };
+        
+        // Sign and publish the image event
+        const signedImageEvent = finalizeEvent(imageEvent, hexKey as unknown as Uint8Array);
+        await pool.publish(NOSTR_RELAYS, signedImageEvent);
+        
+        console.log('Published QR code as a separate Nostr image event');
+        
+        // Now reference the image in the main event using NIP-94 format
+        event.tags.push(['e', signedImageEvent.id, '', 'image']);
+        
+        // Also add as a Markdown image in the content for clients that don't support NIP-94
+        // But first create a small preview of the base64 data to avoid flooding logs
+        const base64Preview = base64Image.substring(0, 20) + '...';
+        console.log(`Adding image to Nostr post (base64 preview: ${base64Preview})`);
+        
+        // Add a note about the QR code being attached
+        event.content += '\n\nA QR code for Bitcoin payment is attached to this post.';
+      } catch (err) {
+        console.error('Error attaching QR code to Nostr post:', err);
+      }
     }
 
     // Sign the event
