@@ -1,5 +1,4 @@
 import { nip19, SimplePool, type Event } from 'nostr-tools';
-import { setupNostrPool } from './nostr-util';
 
 // Relays to query for profile information
 const PROFILE_RELAYS = [
@@ -31,8 +30,8 @@ export async function getLightningAddressFromNpub(npub: string): Promise<string 
       return null;
     }
 
-    // Set up Nostr pool
-    const pool = setupNostrPool(PROFILE_RELAYS);
+    // Create a new pool
+    const pool = new SimplePool();
 
     // Look up the profile metadata (kind 0) events
     console.log(`Looking up profile metadata for pubkey: ${pubkey}`);
@@ -68,28 +67,32 @@ export async function getLightningAddressFromNpub(npub: string): Promise<string 
 async function getProfileEvents(pool: SimplePool, pubkey: string): Promise<Event[]> {
   return new Promise((resolve) => {
     const events: Event[] = [];
-    const sub = pool.sub(PROFILE_RELAYS, [
+    
+    // Use SimplePool's subscribe method to fetch events
+    const sub = pool.subscribeMany(
+      PROFILE_RELAYS,
+      [
+        {
+          kinds: [0],
+          authors: [pubkey]
+        }
+      ],
       {
-        kinds: [0],
-        authors: [pubkey]
+        onevent(event) {
+          events.push(event);
+        },
+        oneose() {
+          sub.close();
+          resolve(events);
+        }
       }
-    ]);
+    );
 
     // Set a timeout to ensure we don't wait forever
-    const timeout = setTimeout(() => {
-      sub.unsub();
+    setTimeout(() => {
+      sub.close();
       resolve(events);
     }, 5000);
-
-    sub.on('event', (event: Event) => {
-      events.push(event);
-    });
-
-    sub.on('eose', () => {
-      clearTimeout(timeout);
-      sub.unsub();
-      resolve(events);
-    });
   });
 }
 

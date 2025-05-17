@@ -195,12 +195,15 @@ export default function HighFiveForm() {
                     <div className="relative">
                       <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
                       <Input
-                        placeholder="Enter an Easy Bitcoin Address"
+                        placeholder="Enter a Bitcoin Address or npub"
                         className="p-3 pl-8 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
                         {...field}
                       />
                     </div>
                   </FormControl>
+                  <div className="text-xs text-gray-500 pl-1">
+                    Supports: user@domain.com or Nostr npub
+                  </div>
                 </FormItem>
               )}
             />

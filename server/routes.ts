@@ -10,6 +10,8 @@ import crypto from 'crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import express from 'express';
 import { lookupPaymentInstructions } from "./dns-util";
+import { getLightningAddressFromNpub } from "./nostr-profile";
+import { getLnurlFromLightningAddress } from "./lightning-tool";
 
 // Create public directory and qr-codes subdirectory if they don't exist
 const publicDir = path.join(process.cwd(), 'public');
@@ -80,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // New endpoint for looking up payment instructions
+  // Endpoint for looking up payment instructions from btag or npub
   app.get("/api/payment-instructions", async (req, res) => {
     try {
       const { btag } = req.query;
@@ -88,24 +90,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!btag || typeof btag !== 'string') {
         return res.status(400).json({ 
           message: "Missing or invalid 'btag' parameter",
-          details: "Please provide a valid btag in the format user@domain.com" 
+          details: "Please provide a valid btag in the format user@domain.com or a Nostr npub" 
         });
       }
       
-      console.log(`Looking up payment instructions for btag: ${btag}`);
-      const paymentInstructions = await lookupPaymentInstructions(btag);
-      
-      if (!paymentInstructions) {
-        return res.status(404).json({ 
-          message: "Payment instructions not found",
-          details: "Could not find payment instructions for the specified btag" 
+      // Check if the input is an npub
+      if (btag.startsWith('npub')) {
+        console.log(`Looking up payment instructions for npub: ${btag}`);
+        
+        // Get Lightning Address from npub
+        const lightningAddress = await getLightningAddressFromNpub(btag);
+        
+        if (!lightningAddress) {
+          return res.status(404).json({
+            message: "Lightning Address not found",
+            details: "Could not find a Lightning Address for this Nostr profile"
+          });
+        }
+        
+        console.log(`Found Lightning Address for npub: ${lightningAddress}`);
+        
+        // Get LNURL from Lightning Address
+        const lnurlData = await getLnurlFromLightningAddress(lightningAddress);
+        
+        if (!lnurlData) {
+          return res.status(404).json({
+            message: "Payment instructions not found",
+            details: "Could not retrieve LNURL from the Lightning Address"
+          });
+        }
+        
+        return res.status(200).json({
+          btag,
+          paymentInstructions: lnurlData,
+          paymentType: 'lnurl',
+          lightningAddress
+        });
+      } else {
+        // Standard btag lookup (email format)
+        console.log(`Looking up payment instructions for btag: ${btag}`);
+        const paymentInstructions = await lookupPaymentInstructions(btag);
+        
+        if (!paymentInstructions) {
+          return res.status(404).json({ 
+            message: "Payment instructions not found",
+            details: "Could not find payment instructions for the specified btag" 
+          });
+        }
+        
+        return res.status(200).json({ 
+          btag,
+          paymentInstructions,
+          paymentType: 'lno'
         });
       }
-      
-      return res.status(200).json({ 
-        btag,
-        paymentInstructions
-      });
     } catch (error) {
       console.error("Error looking up payment instructions:", error);
       return res.status(500).json({ 

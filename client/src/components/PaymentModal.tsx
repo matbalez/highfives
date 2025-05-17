@@ -13,6 +13,12 @@ interface PaymentModalProps {
   onConfirmPayment: (paymentInstructions: string) => void;
 }
 
+interface PaymentData {
+  paymentInstructions: string;
+  paymentType?: 'lnurl' | 'lno';
+  lightningAddress?: string;
+}
+
 export default function PaymentModal({
   isOpen,
   highFiveDetails,
@@ -21,7 +27,7 @@ export default function PaymentModal({
 }: PaymentModalProps) {
   const qrCodeRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const [paymentInstructions, setPaymentInstructions] = useState<string | null>(null);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,17 +36,21 @@ export default function PaymentModal({
     if (isOpen && highFiveDetails.recipient) {
       setIsLoading(true);
       setError(null);
-      setPaymentInstructions(null);
+      setPaymentData(null);
       
-      // Assume the recipient field contains the btag
-      const btag = highFiveDetails.recipient;
+      // Recipient field can be either a btag or an npub
+      const recipient = highFiveDetails.recipient;
       
       // Call our API to look up payment instructions
-      axios.get(`/api/payment-instructions?btag=${encodeURIComponent(btag)}`)
+      axios.get(`/api/payment-instructions?btag=${encodeURIComponent(recipient)}`)
         .then(response => {
           if (response.data && response.data.paymentInstructions) {
             console.log("Payment instructions lookup successful", response.data);
-            setPaymentInstructions(response.data.paymentInstructions);
+            setPaymentData({
+              paymentInstructions: response.data.paymentInstructions,
+              paymentType: response.data.paymentType,
+              lightningAddress: response.data.lightningAddress
+            });
             setIsLoading(false);
           } else {
             // This shouldn't happen based on the API design but handling just in case
@@ -49,16 +59,30 @@ export default function PaymentModal({
         })
         .catch(err => {
           console.error("Error fetching payment instructions:", err);
-          setError("Could not find payment instructions for this recipient.");
+          
+          // Get more specific error information if available
+          let errorMessage = "Could not find payment instructions for this recipient.";
+          if (err.response && err.response.data && err.response.data.details) {
+            errorMessage = err.response.data.details;
+          }
+          
+          setError(errorMessage);
           setIsLoading(false);
           
           // Close the modal after showing the error briefly
           setTimeout(() => {
             onClose();
             
+            let description = "No payment instructions found for this recipient. Please verify the recipient address is correct.";
+            
+            // Check for specific error types
+            if (recipient.startsWith('npub') && err.response && err.response.status === 404) {
+              description = "This Nostr profile doesn't have a Lightning Address configured. Please try a different recipient.";
+            }
+            
             toast({
               title: "Payment Lookup Error",
-              description: "No payment instructions found for this recipient. Please verify the recipient is a valid Bitcoin address.",
+              description,
               variant: "destructive",
             });
           }, 1500);
@@ -68,8 +92,8 @@ export default function PaymentModal({
 
   const handleConfirmPayment = () => {
     // Only proceed if we have valid payment instructions
-    if (paymentInstructions) {
-      onConfirmPayment(paymentInstructions);
+    if (paymentData && paymentData.paymentInstructions) {
+      onConfirmPayment(paymentData.paymentInstructions);
     } else {
       // Should never happen now, but just in case
       toast({
@@ -79,6 +103,31 @@ export default function PaymentModal({
       });
       onClose();
     }
+  };
+
+  // Get the appropriate label for the QR code based on payment type
+  const getQRCodeLabel = () => {
+    if (!paymentData) return "";
+    
+    if (paymentData.paymentType === 'lnurl') {
+      return "Pay this LNURL";
+    } else {
+      return "Scan with a BOLT12 wallet";
+    }
+  };
+
+  // Get additional info to display (like Lightning Address)
+  const getAdditionalInfo = () => {
+    if (!paymentData) return null;
+    
+    if (paymentData.paymentType === 'lnurl' && paymentData.lightningAddress) {
+      return (
+        <div className="text-center mt-2 text-xs text-gray-500">
+          Lightning Address: {paymentData.lightningAddress}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -103,11 +152,11 @@ export default function PaymentModal({
             </div>
           ) : null}
           
-          {paymentInstructions && (
+          {paymentData && paymentData.paymentInstructions && (
             <>
               <div ref={qrCodeRef} className="bg-white p-5 rounded-lg border-2 border-gray-200">
                 <QRCodeSVG
-                  value={paymentInstructions}
+                  value={paymentData.paymentInstructions}
                   size={250}
                   level="M"
                   includeMargin
@@ -116,15 +165,17 @@ export default function PaymentModal({
               </div>
               
               <div className="text-center mt-4 text-sm text-gray-600">
-                Scan with a BOLT12 wallet
+                {getQRCodeLabel()}
               </div>
+              
+              {getAdditionalInfo()}
             </>
           )}
           
           <Button 
             className="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
             onClick={handleConfirmPayment}
-            disabled={isLoading || !paymentInstructions}
+            disabled={isLoading || !paymentData || !paymentData.paymentInstructions}
           >
             {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
           </Button>
