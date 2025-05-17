@@ -4,7 +4,7 @@ import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { uploadQRCode } from './cloudflare-direct';
+import { uploadQRCodeImage } from './upload-qr';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
@@ -117,50 +117,43 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add QR code image to the Nostr post using Cloudflare for public hosting
+    // Embed QR code directly in the Nostr post content as base64
     if (highFive.lightningInvoice && qrCodeUrl) {
       try {
-        // Get the local path to the QR code image
-        const qrCodeFilename = path.basename(qrCodeUrl);
-        const qrCodeFilePath = path.join(QR_CODE_DIR, qrCodeFilename);
+        console.log(`Generating QR code for direct embedding in Nostr post`);
         
-        console.log(`Uploading QR code image to Cloudflare from: ${qrCodeFilePath}`);
+        // Generate a fresh QR code directly as a data URL
+        // This approach embeds the QR code directly in the Nostr post
+        const qrCodeDataUrl = await QRCode.toDataURL(highFive.lightningInvoice, {
+          errorCorrectionLevel: 'H', // Higher error correction for better scanning
+          margin: 1,                // Smaller margin
+          width: 240,               // Slightly smaller image size for better compatibility
+          color: {
+            dark: '#000000',        // Standard black for maximum contrast
+            light: '#ffffff'        // White background
+          }
+        });
         
-        // Determine the base URL for local fallback if needed
-        const baseUrl = process.env.REPL_SLUG 
-          ? `https://${process.env.REPL_SLUG}.replit.dev` 
-          : process.env.REPLIT_APP_URL || 'https://highfives.replit.app';
+        console.log(`Successfully generated QR code data URL for Nostr post`);
         
-        // Upload the QR code image to Cloudflare for reliable public access
-        // Cloudflare R2 provides a stable, fast CDN for the images
-        const imageUrl = await uploadQRCode(qrCodeFilePath, baseUrl);
+        // Add the QR code to the post content as an inline image
+        // Most modern Nostr clients will render this properly
+        event.content += `\n\n### Scan this QR code to pay with Bitcoin:\n\n![QR Code for Lightning payment](${qrCodeDataUrl})`;
         
-        console.log(`Successfully uploaded QR code image to: ${imageUrl}`);
+        // Add a plain text version of the payment info for clients that can't show images
+        const shortInvoice = highFive.lightningInvoice.substring(0, 30) + '...';
+        event.content += `\n\nLightning invoice: ${shortInvoice}`;
         
-        // Add the image URL to the Nostr post content using markdown format
-        // This format is widely supported by most Nostr clients
-        event.content += `\n\n![QR Code for Lightning payment](${imageUrl})`;
+        // Add standard tags to help Nostr clients identify the post
+        event.tags.push(['t', 'bitcoin']);
+        event.tags.push(['t', 'lightning']);
         
-        // Also add the standard 'image' tag that newer Nostr clients use
-        event.tags.push(['image', imageUrl]);
-        
-        // For older clients, also add an 'i' tag which some clients support
-        event.tags.push(['i', imageUrl]);
-        
-        console.log(`Added QR code image to Nostr post with URL: ${imageUrl}`);
+        console.log(`Added QR code directly to Nostr post content`);
       } catch (err) {
-        console.error('Error uploading QR code to Cloudflare:', err);
+        console.error('Error generating QR code for Nostr post:', err);
         
-        // If Cloudflare upload fails, try to include a direct reference to the local image
-        // This isn't ideal but better than nothing
-        const hostname = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.replit.dev` : 'https://highfives.replit.app';
-        const localImageUrl = `${hostname}${qrCodeUrl}`;
-        
-        // Add local image URL to the content and tags
-        event.content += `\n\n![QR Code for Lightning payment](${localImageUrl})`;
-        event.tags.push(['image', localImageUrl]);
-        
-        console.log(`Fell back to local image URL: ${localImageUrl}`);
+        // If direct embedding fails, include a short message
+        event.content += `\n\nA QR code for Bitcoin payment should be available. If not visible, please contact the sender.`;
       }
     }
 

@@ -13,7 +13,8 @@ export async function uploadQRCodeImage(filePath: string, localBaseUrl: string =
     console.log(`Successfully uploaded QR code to Cloudflare: ${cloudflareUrl}`);
     return cloudflareUrl;
   } catch (error) {
-    console.warn(`Cloudflare upload failed: ${error.message}, using local URL`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`Cloudflare upload failed: ${errorMessage}, using local URL`);
     
     // Fall back to local hosting if Cloudflare upload fails
     const fileName = path.basename(filePath);
