@@ -190,14 +190,51 @@ export async function publishHighFiveToNostr(highFive: {
 
     // Sign the event
     const signedEvent = finalizeEvent(event, hexKey as unknown as Uint8Array);
+    
+    // Log the event ID (this is what you'd use to find the event in a Nostr client)
+    console.log(`Nostr event created with ID: ${signedEvent.id}`);
+    console.log(`Nostr event public key: ${signedEvent.pubkey}`);
+    console.log(`Nostr event tags:`, JSON.stringify(signedEvent.tags));
+    
+    // Log which relays we're publishing to
+    console.log(`Publishing to Nostr relays: ${NOSTR_RELAYS.join(', ')}`);
 
     // Publish to relays
     const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
     
-    // Wait for at least one successful publication
-    await Promise.any(pubs);
+    // Set up a more detailed success/failure tracking
+    let successCount = 0;
+    let failureCount = 0;
     
-    console.log('High Five successfully published to Nostr');
+    // Track results from each relay
+    const pubResults = pubs.map((pub, index) => 
+      pub.then(() => {
+        successCount++;
+        console.log(`✅ Published to relay ${NOSTR_RELAYS[index]} successfully`);
+        return { relay: NOSTR_RELAYS[index], success: true };
+      }).catch(err => {
+        failureCount++;
+        console.error(`❌ Failed to publish to relay ${NOSTR_RELAYS[index]}:`, err);
+        return { relay: NOSTR_RELAYS[index], success: false, error: err };
+      })
+    );
+    
+    // Wait for all publications to complete or fail
+    try {
+      const results = await Promise.allSettled(pubResults);
+      
+      // Log detailed results
+      console.log(`Nostr publication complete: ${successCount} successes, ${failureCount} failures`);
+      
+      if (successCount > 0) {
+        console.log(`High Five successfully published to Nostr with event ID: ${signedEvent.id}`);
+        console.log(`Search for this event ID in Nostr clients or use https://nostr.watch/e/${signedEvent.id}`);
+      } else {
+        console.error(`Failed to publish High Five to any Nostr relay`);
+      }
+    } catch (error) {
+      console.error('Error waiting for Nostr publications:', error);
+    }
   } catch (error) {
     // Don't let Nostr errors affect the main application
     console.error('Error publishing to Nostr:', error);
