@@ -23,14 +23,17 @@ async function runMigrations() {
   }
 }
 
-// Run migrations immediately
-runMigrations().then(() => {
-  console.log('Migration script completed');
-  process.exit(0);
-}).catch(err => {
-  console.error('Migration failed:', err);
-  process.exit(1);
-});
+// Only run migrations immediately if this file is executed directly
+// Don't exit the process if this is imported by another module
+if (import.meta.url === import.meta.main) {
+  runMigrations().then(() => {
+    console.log('Migration script completed');
+    process.exit(0);
+  }).catch(err => {
+    console.error('Migration failed:', err);
+    process.exit(1);
+  });
+}
 
 // Export for use in other files
 export { runMigrations };
