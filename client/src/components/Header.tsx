@@ -3,6 +3,7 @@ import highFivesLogo from "../assets/hf square.png";
 import { Button } from "@/components/ui/button";
 import NostrConnectModal from "./NostrConnectModal";
 import { useStore } from "@/lib/store";
+import { Link } from "wouter";
 
 export default function Header() {
   const { nostrUser, setNostrUser, isNostrConnected } = useStore();
@@ -20,7 +21,9 @@ export default function Header() {
     <header className="sticky top-0 bg-white shadow-md z-10">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="logo">
-          <img src={highFivesLogo} alt="High Fives Logo" className="h-12" />
+          <Link href="/">
+            <img src={highFivesLogo} alt="High Fives Logo" className="h-12 cursor-pointer" />
+          </Link>
         </div>
         
         {isNostrConnected ? (

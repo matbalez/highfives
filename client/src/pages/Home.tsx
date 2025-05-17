@@ -3,6 +3,7 @@ import HighFiveForm from "@/components/HighFiveForm";
 import HighFivesList from "@/components/HighFivesList";
 import Notification from "@/components/Notification";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import bitcoinHighFiveImage from "../assets/bitcoin-high-five.png";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("send");
@@ -19,6 +20,13 @@ export default function Home() {
           {/* Form Section */}
           <div className="mb-8 max-w-md mx-auto">
             <HighFiveForm />
+            <div className="mt-12 flex justify-center">
+              <img 
+                src={bitcoinHighFiveImage} 
+                alt="Bitcoin High Five" 
+                className="w-64 h-64 object-contain"
+              />
+            </div>
           </div>
         </TabsContent>
         
