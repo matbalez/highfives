@@ -85,12 +85,12 @@ export default function HighFiveForm() {
         // This shouldn't happen based on API design but handling just in case
         throw new Error("Invalid payment instructions");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching payment instructions:", error);
       
       // Check if it's a network error vs. no payment instructions
-      const isServerError = error.response && (error.response.status >= 500 || error.response.status === 0);
-      const isNotFoundError = error.response && error.response.status === 404;
+      const isServerError = error?.response && (error.response.status >= 500 || error.response.status === 0);
+      const isNotFoundError = error?.response && error.response.status === 404;
       
       if (isServerError) {
         toast({
