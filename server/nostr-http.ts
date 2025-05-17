@@ -4,7 +4,7 @@ import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { uploadQRCode } from './cloudflare-storage';
+import { uploadQRCode } from './cloudflare-direct';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
