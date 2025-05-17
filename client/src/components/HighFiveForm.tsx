@@ -46,10 +46,14 @@ export default function HighFiveForm() {
     },
   });
   
-  // Update sender field when nostrUser changes
+  // Update sender field when nostrUser changes (either connected or disconnected)
   useEffect(() => {
     if (nostrUser) {
+      // Set the sender field with the nostrUser value when connected
       form.setValue("sender", nostrUser);
+    } else {
+      // Clear the sender field when disconnected
+      form.setValue("sender", "");
     }
   }, [nostrUser, form]);
 
