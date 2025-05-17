@@ -1,21 +1,41 @@
 // WebSocket connection management
 let socket: WebSocket | null = null;
+let isConnecting = false;
 
 // Setup the WebSocket connection with proper error handling
 export function setupWebSocket(): WebSocket | null {
+  // Don't try to connect if we're already connected or in the process of connecting
+  if (isConnecting) {
+    return socket;
+  }
+  
   if (socket && socket.readyState === WebSocket.OPEN) {
     console.log('WebSocket already connected');
     return socket;
   }
   
+  // Clean up any existing socket before creating a new one
+  if (socket) {
+    try {
+      socket.close();
+    } catch (err) {
+      // Ignore errors during cleanup
+    }
+    socket = null;
+  }
+  
   try {
-    // Fixed approach: Only create WebSocket if we have a valid host
+    // Set connecting flag to prevent multiple connection attempts
+    isConnecting = true;
+    
+    // Only create WebSocket if we have a valid host
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     
-    // Skip WebSocket setup if host is invalid or we're in a development environment with HMR issues
+    // Skip WebSocket setup if host is invalid
     if (!host || host.includes('localhost:undefined')) {
-      console.log('Skipping WebSocket setup due to invalid host or development environment');
+      console.log('Skipping WebSocket setup due to invalid host');
+      isConnecting = false;
       return null;
     }
     
@@ -28,6 +48,7 @@ export function setupWebSocket(): WebSocket | null {
     // Setup event handlers
     socket.onopen = () => {
       console.log('WebSocket connection established');
+      isConnecting = false;
     };
     
     socket.onmessage = (event) => {
@@ -44,7 +65,8 @@ export function setupWebSocket(): WebSocket | null {
     
     socket.onerror = (error) => {
       console.error('WebSocket error:', error);
-      socket = null;
+      isConnecting = false;
+      // Don't set socket to null here, let the onclose handler do that
     };
     
     // Track reconnection attempts at module level to prevent multiple reconnection loops
@@ -54,26 +76,21 @@ export function setupWebSocket(): WebSocket | null {
     socket.onclose = (event) => {
       console.log(`WebSocket closed with code ${event.code}: ${event.reason}`);
       
-      // Keep socket object null to prevent multiple reconnection attempts
-      const currentSocket = socket;
+      // Reset connecting flag
+      isConnecting = false;
+      
+      // Set socket to null to allow new connection attempts
       socket = null;
       
-      // Only attempt reconnection if this is still the current socket
-      // and if it was a normal closure or network issue
-      if (
-        currentSocket && 
-        (event.code === 1000 || event.code === 1001 || event.code === 1006) &&
-        reconnectAttempts < MAX_RECONNECT_ATTEMPTS
-      ) {
+      // Only attempt reconnection for normal closures or network issues
+      if ((event.code === 1000 || event.code === 1001 || event.code === 1006) &&
+          reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
         reconnectAttempts++;
         console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
         
         // Use a slightly longer delay between reconnection attempts
         setTimeout(() => {
-          // Only try to reconnect if we still don't have a socket
-          if (!socket) {
-            setupWebSocket();
-          }
+          setupWebSocket();
         }, 5000); // 5 second delay
       } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
         console.log('Max reconnection attempts reached. WebSocket reconnection stopped.');
@@ -87,6 +104,7 @@ export function setupWebSocket(): WebSocket | null {
     return socket;
   } catch (err) {
     console.error('Failed to setup WebSocket connection:', err);
+    isConnecting = false;
     return null;
   }
 }
