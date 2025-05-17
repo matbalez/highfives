@@ -117,39 +117,50 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add QR code directly to the Nostr post content - a simple approach that works
-    if (highFive.lightningInvoice) {
+    // Add QR code image to the Nostr post using Cloudflare for public hosting
+    if (highFive.lightningInvoice && qrCodeUrl) {
       try {
-        console.log(`Generating QR code directly for Nostr post...`);
+        // Get the local path to the QR code image
+        const qrCodeFilename = path.basename(qrCodeUrl);
+        const qrCodeFilePath = path.join(QR_CODE_DIR, qrCodeFilename);
         
-        // Generate a fresh QR code directly as a data URI
-        // This is the most compatible method across Nostr clients
-        const qrCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
-          errorCorrectionLevel: 'M',
-          type: 'image/png',
-          margin: 2,
-          width: 300,
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
-          }
-        });
+        console.log(`Uploading QR code image to Cloudflare from: ${qrCodeFilePath}`);
         
-        console.log(`Successfully generated QR code data URI for Nostr post`);
+        // Determine the base URL for local fallback if needed
+        const baseUrl = process.env.REPL_SLUG 
+          ? `https://${process.env.REPL_SLUG}.replit.dev` 
+          : process.env.REPLIT_APP_URL || 'https://highfives.replit.app';
         
-        // We add this to the Nostr event content using standard markdown format
-        // Most Nostr clients support this format for images embedded directly
-        event.content += `\n\n![QR Code for Lightning payment](${qrCodeDataUri})`;
+        // Upload the QR code image to Cloudflare for reliable public access
+        // Cloudflare R2 provides a stable, fast CDN for the images
+        const imageUrl = await uploadQRCode(qrCodeFilePath, baseUrl);
         
-        // Also add a special tag for Nostr clients that support the 'image' tag
-        event.tags.push(['image', qrCodeDataUri]);
+        console.log(`Successfully uploaded QR code image to: ${imageUrl}`);
         
-        console.log(`Added QR code directly to Nostr post content`);
+        // Add the image URL to the Nostr post content using markdown format
+        // This format is widely supported by most Nostr clients
+        event.content += `\n\n![QR Code for Lightning payment](${imageUrl})`;
+        
+        // Also add the standard 'image' tag that newer Nostr clients use
+        event.tags.push(['image', imageUrl]);
+        
+        // For older clients, also add an 'i' tag which some clients support
+        event.tags.push(['i', imageUrl]);
+        
+        console.log(`Added QR code image to Nostr post with URL: ${imageUrl}`);
       } catch (err) {
-        console.error('Error generating QR code for Nostr post:', err);
+        console.error('Error uploading QR code to Cloudflare:', err);
         
-        // Add a fallback text message
-        event.content += '\n\nA QR code for Bitcoin Lightning payment should be attached to this post.';
+        // If Cloudflare upload fails, try to include a direct reference to the local image
+        // This isn't ideal but better than nothing
+        const hostname = process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.replit.dev` : 'https://highfives.replit.app';
+        const localImageUrl = `${hostname}${qrCodeUrl}`;
+        
+        // Add local image URL to the content and tags
+        event.content += `\n\n![QR Code for Lightning payment](${localImageUrl})`;
+        event.tags.push(['image', localImageUrl]);
+        
+        console.log(`Fell back to local image URL: ${localImageUrl}`);
       }
     }
 
