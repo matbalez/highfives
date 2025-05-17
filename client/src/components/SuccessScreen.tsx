@@ -56,11 +56,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                   High Five sent to:
                 </p>
                 <p className="text-2xl font-bold mt-2 break-words">
-                  {highFive.recipient.startsWith('npub') ? (
-                    highFive.recipient
-                  ) : (
-                    <><span className="text-black">₿</span>{highFive.recipient}</>
-                  )}
+                  <span className="text-black">₿</span>{highFive.recipient}
                 </p>
               </div>
               
