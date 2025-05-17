@@ -3,12 +3,13 @@ import highFivesLogo from "../assets/hf square.png";
 import { Button } from "@/components/ui/button";
 import NostrConnectModal from "./NostrConnectModal";
 import { useStore } from "@/lib/store";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Header() {
   const { nostrUser, setNostrUser, isNostrConnected } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [location, setLocation] = useLocation();
+  
   const handleConnectClick = () => {
     setIsModalOpen(true);
   };
@@ -16,14 +17,24 @@ export default function Header() {
   const handleDisconnect = () => {
     setNostrUser(null);
   };
+  
+  const handleLogoClick = () => {
+    // Always go back to the send tab when logo is clicked
+    setLocation("/");
+    
+    // Set in session storage so Home component can pick it up
+    window.sessionStorage.setItem("activeTab", "send");
+    
+    // No need for a full page reload - the Home component will read from sessionStorage
+  };
 
   return (
     <header className="sticky top-0 bg-white shadow-md z-10">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="logo">
-          <Link href="/">
-            <img src={highFivesLogo} alt="High Fives Logo" className="h-12 cursor-pointer" />
-          </Link>
+          <div onClick={handleLogoClick} className="cursor-pointer">
+            <img src={highFivesLogo} alt="High Fives Logo" className="h-12" />
+          </div>
         </div>
         
         {isNostrConnected ? (

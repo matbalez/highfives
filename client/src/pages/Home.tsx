@@ -6,7 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import bitcoinHighFiveImage from "../assets/bitcoin-high-five.png";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState("send");
+  // Check if there's a saved tab preference in sessionStorage
+  const savedTab = typeof window !== 'undefined' ? window.sessionStorage.getItem("activeTab") : null;
+  const [activeTab, setActiveTab] = useState(savedTab || "send");
+  
+  // Clear the session storage after reading it to avoid persistence issues
+  if (typeof window !== 'undefined' && savedTab) {
+    window.sessionStorage.removeItem("activeTab");
+  }
 
   return (
     <main className="container mx-auto px-4 py-6 max-w-3xl flex-1">
