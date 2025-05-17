@@ -128,23 +128,13 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
       const pin = generatePin();
       console.log("Generated PIN:", pin);
       
-      try {
-        // Try to send DM
-        const dmSent = await sendNostrDM(npub, pin); // Send using the npub format
-        
-        if (dmSent) {
-          console.log("DM sent successfully with PIN:", pin);
-          // Display the PIN in the UI for testing purposes
-          setError(`For testing: Your PIN is ${pin}`);
-          setStep('pin');
-        } else {
-          throw new Error('Could not send PIN via DM');
-        }
-      } catch (dmError) {
-        console.error("DM send error:", dmError);
-        // Continue anyway to allow testing, but display PIN in the UI
-        setError(`DM may not have been delivered. For testing, your PIN is: ${pin}`);
+      const dmSent = await sendNostrDM(npub, pin); // Send using the npub format
+
+      if (dmSent) {
+        console.log("DM sent successfully with PIN:", pin);
         setStep('pin');
+      } else {
+        throw new Error('Failed to send verification PIN. Please try again.');
       }
     } catch (err) {
       console.error('Error in npub handling:', err);
