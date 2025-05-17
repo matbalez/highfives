@@ -134,7 +134,7 @@ export default function HighFiveForm() {
                     <div className="relative">
                       <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
                       <Input
-                        placeholder="Enter a ₿tag"
+                        placeholder="Enter an Easy Bitcoin Address"
                         className="p-3 pl-8 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
                         {...field}
                       />
