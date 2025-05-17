@@ -63,9 +63,14 @@ async function publishFileEvent(
 ): Promise<string> {
   // Handle nsec format
   let hexKey = privateKeyHex;
-  if (privateKeyHex.startsWith('nsec')) {
-    const { data } = nip19.decode(privateKeyHex);
-    hexKey = data as string;
+  if (typeof privateKeyHex === 'string' && privateKeyHex.startsWith('nsec')) {
+    try {
+      const { data } = nip19.decode(privateKeyHex);
+      hexKey = data as string;
+    } catch (e) {
+      console.error('Invalid nsec key:', e);
+      throw e;
+    }
   }
   
   // Get public key
@@ -121,7 +126,7 @@ export async function publishHighFiveToNostr(highFive: {
 
     // Handle nsec format if needed
     let hexKey = privateKeyHex;
-    if (privateKeyHex.startsWith('nsec')) {
+    if (typeof privateKeyHex === 'string' && privateKeyHex.startsWith('nsec')) {
       try {
         const { data } = nip19.decode(privateKeyHex);
         hexKey = data as string;
