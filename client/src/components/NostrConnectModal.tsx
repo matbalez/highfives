@@ -112,6 +112,8 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
         throw new Error('Invalid npub format. It should start with "npub1"');
       }
 
+      console.log("Sending PIN to recipient npub:", npub);
+
       // Decode the npub to get the pubkey
       const decoded = nip19.decode(npub);
       if (decoded.type !== 'npub') {
@@ -120,12 +122,16 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
 
       const decodedPubkey = decoded.data as string;
       setPubkey(decodedPubkey);
+      console.log("Using recipient pubkey (hex):", decodedPubkey);
 
       // Generate a PIN and send it as a DM
       const pin = generatePin();
-      const dmSent = await sendNostrDM(decodedPubkey, pin);
+      console.log("Generated PIN:", pin);
+      
+      const dmSent = await sendNostrDM(npub, pin); // Send using the npub format
 
       if (dmSent) {
+        console.log("DM sent successfully with PIN:", pin);
         setStep('pin');
       } else {
         throw new Error('Failed to send verification PIN. Please try again.');
