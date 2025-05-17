@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 interface StoreContextType {
   bitcoinBalance: number;
@@ -13,7 +13,7 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
+export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [bitcoinBalance, setBitcoinBalance] = useState<number>(1000000);
   const [notificationVisible, setNotificationVisible] = useState<boolean>(false);
   const [nostrUser, setNostrUserState] = useState<string | null>(() => {
@@ -44,19 +44,19 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const value: StoreContextType = {
+    bitcoinBalance,
+    setBitcoinBalance,
+    notificationVisible,
+    showNotification,
+    hideNotification,
+    nostrUser,
+    setNostrUser,
+    isNostrConnected: !!nostrUser
+  };
+
   return (
-    <StoreContext.Provider
-      value={{
-        bitcoinBalance,
-        setBitcoinBalance,
-        notificationVisible,
-        showNotification,
-        hideNotification,
-        nostrUser,
-        setNostrUser,
-        isNostrConnected: !!nostrUser
-      }}
-    >
+    <StoreContext.Provider value={value}>
       {children}
     </StoreContext.Provider>
   );

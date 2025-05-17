@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import highFivesLogo from "../assets/hf square.png";
 import { Button } from "@/components/ui/button";
 import NostrConnectModal from "./NostrConnectModal";
-import { useStore } from "@/lib/store";
+import { useStore } from "@/lib/store.ts";
 
 export default function Header() {
   const { nostrUser, setNostrUser, isNostrConnected } = useStore();
