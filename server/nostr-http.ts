@@ -90,7 +90,7 @@ export async function publishHighFiveToNostr(highFive: {
   reason: string;
   sender?: string;
   lightningInvoice?: string;
-}): Promise<void> {
+}): Promise<string | null> {
   try {
     // Get private key from environment variables
     const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
@@ -191,16 +191,23 @@ export async function publishHighFiveToNostr(highFive: {
     // Sign the event
     const signedEvent = finalizeEvent(event, hexKey as unknown as Uint8Array);
 
+    // Get the event ID
+    const eventId = signedEvent.id;
+    
     // Publish to relays
     const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
     
     // Wait for at least one successful publication
     await Promise.any(pubs);
     
-    console.log('High Five successfully published to Nostr');
+    console.log(`High Five successfully published to Nostr with ID: ${eventId}`);
+    
+    // Return the event ID
+    return eventId;
   } catch (error) {
     // Don't let Nostr errors affect the main application
     console.error('Error publishing to Nostr:', error);
+    return null;
   }
 }
 
