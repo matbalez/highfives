@@ -55,7 +55,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                 <p className="text-xl font-bold font-futura text-primary">
                   High Five sent to:
                 </p>
-                <p className="text-2xl font-bold mt-2">
+                <p className="text-2xl font-bold mt-2 break-words">
                   <span className="text-black">₿</span>{highFive.recipient}
                 </p>
               </div>
@@ -64,15 +64,15 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                 <p className="italic text-gray-700 whitespace-pre-line">{highFive.reason}</p>
               </div>
               
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                 <div>
                   <p className="text-xs text-gray-400 font-normal font-sans">
                     {new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
                   </p>
                 </div>
                 {highFive.sender && (
-                  <div className="text-right">
-                    <p className="font-medium">From: {highFive.sender}</p>
+                  <div className="w-full sm:text-right">
+                    <p className="font-medium break-words">From: {highFive.sender}</p>
                   </div>
                 )}
               </div>

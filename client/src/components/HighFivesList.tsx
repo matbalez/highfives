@@ -71,7 +71,7 @@ export default function HighFivesList() {
           <CardContent className="p-5">
             <div className="space-y-4">
               <div>
-                <p className="text-xl font-bold">
+                <p className="text-xl font-bold break-words">
                   <span className="text-black">₿</span>{highFive.recipient}
                 </p>
               </div>
@@ -80,15 +80,15 @@ export default function HighFivesList() {
                 <p className="italic text-gray-700 whitespace-pre-line">{highFive.reason}</p>
               </div>
               
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                 <div>
                   <p className="text-xs text-gray-400 font-normal font-sans">
                     {format(parseISO(highFive.createdAt), 'MMM d')}
                   </p>
                 </div>
                 {highFive.sender && (
-                  <div className="text-right">
-                    <p className="font-medium">From: {highFive.sender}</p>
+                  <div className="w-full sm:text-right">
+                    <p className="font-medium break-words">From: {highFive.sender}</p>
                   </div>
                 )}
               </div>
