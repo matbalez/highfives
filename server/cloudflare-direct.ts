@@ -37,10 +37,13 @@ export async function uploadImageToCloudflare(filePath: string): Promise<string>
     const url = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/images/v1`;
     
     // Make the API request to upload the image
+    // Cloudflare API requires either API Token or API Key + Email auth
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${CF_ACCESS_KEY}`
+        // Using API Key authentication
+        'X-Auth-Key': CF_SECRET_KEY,
+        'X-Auth-Email': CF_ACCESS_KEY
       },
       // @ts-ignore
       body: formData
