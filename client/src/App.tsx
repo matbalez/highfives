@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { StoreProvider } from "./lib/store";
 import { useEffect } from "react";
-import { setupWebSocket } from "./lib/websocket";
+import { setupWebSocket, closeWebSocket } from "./lib/websocket";
 
 function Router() {
   return (
@@ -23,16 +23,21 @@ function Router() {
 function App() {
   // Initialize WebSocket connection when the app loads
   useEffect(() => {
-    // Only setup WebSocket in browser environment
+    // Only setup WebSocket in browser environment and after a short delay to ensure DOM is ready
     if (typeof window !== 'undefined') {
-      // Setup WebSocket connection with proper error handling
-      const ws = setupWebSocket();
+      // Add a small delay before initializing the WebSocket
+      const initTimer = setTimeout(() => {
+        // Setup WebSocket connection with proper error handling
+        const ws = setupWebSocket();
+      }, 1000);
       
-      // Clean up WebSocket connection when component unmounts
+      // Clean up function
       return () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
+        // Clear the timer if component unmounts before initialization
+        clearTimeout(initTimer);
+        
+        // Close any open WebSocket connections using the exported function
+        closeWebSocket();
       };
     }
   }, []);
