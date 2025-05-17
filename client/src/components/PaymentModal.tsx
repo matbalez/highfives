@@ -64,41 +64,46 @@ export default function PaymentModal({
     onConfirmPayment(paymentInstructions || FALLBACK_INVOICE);
   };
 
-  // For debugging purposes, show raw payment instructions for now
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md p-6">
         <DialogTitle className="text-center text-xl font-bold">
-          Payment Information
+          Send your bitcoin now
         </DialogTitle>
         
         <div className="mt-4 flex flex-col items-center">
           {isLoading ? (
-            <div className="text-center">
+            <div className="text-center p-8 flex flex-col items-center justify-center">
+              <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
               <p>Looking up payment information...</p>
             </div>
           ) : error ? (
-            <div className="text-center text-red-500 mb-4">
+            <div className="text-center text-amber-600 mb-4 p-2 bg-amber-50 rounded-md">
               <p>{error}</p>
             </div>
           ) : null}
           
-          {/* Display the raw payment instructions for now */}
-          <div className="w-full bg-gray-100 p-4 rounded-lg overflow-auto max-h-[200px] text-xs font-mono">
-            <pre>{paymentInstructions || "No payment instructions found"}</pre>
-          </div>
-          
-          {/* Also show QR code for convenience */}
           {paymentInstructions && (
-            <div ref={qrCodeRef} className="bg-white p-4 rounded-lg mt-4">
-              <QRCodeSVG
-                value={paymentInstructions}
-                size={200}
-                level="L"
-                includeMargin
-                className="mx-auto"
-              />
-            </div>
+            <>
+              <div ref={qrCodeRef} className="bg-white p-5 rounded-lg border-2 border-gray-200">
+                <QRCodeSVG
+                  value={paymentInstructions}
+                  size={250}
+                  level="M"
+                  includeMargin
+                  className="mx-auto"
+                />
+              </div>
+              
+              <div className="text-center mt-4 text-sm text-gray-600">
+                Scan this QR code with your Lightning wallet to complete the payment
+              </div>
+              
+              {/* Small indicator showing where the payment instruction was found */}
+              <div className="mt-2 text-xs text-gray-500 flex items-center">
+                <span className="mr-1">✓</span> Payment instructions found for {highFiveDetails.recipient}
+              </div>
+            </>
           )}
           
           <Button 
@@ -106,7 +111,7 @@ export default function PaymentModal({
             onClick={handleConfirmPayment}
             disabled={isLoading || !paymentInstructions}
           >
-            {isLoading ? "Loading..." : "I have sent the bitcoin"}
+            {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
           </Button>
         </div>
       </DialogContent>
