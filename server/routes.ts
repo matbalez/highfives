@@ -150,19 +150,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // Add WebSocket server
+  // Add WebSocket server with ping/pong for connection stability
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws: WebSocket & { isAlive?: boolean }) => {
     console.log('WebSocket client connected');
     
-    ws.on('message', (message) => {
-      console.log('Received message:', message);
+    // Mark the connection as alive initially
+    ws.isAlive = true;
+    
+    // Handle pong messages from client (responding to our ping)
+    ws.on('pong', () => {
+      ws.isAlive = true;
     });
     
+    // Handle regular messages
+    ws.on('message', (message) => {
+      console.log('Received message:', message);
+      
+      try {
+        // Echo back confirmation to the client
+        ws.send(JSON.stringify({
+          type: 'confirmation',
+          timestamp: Date.now()
+        }));
+      } catch (err) {
+        console.error('Error sending confirmation:', err);
+      }
+    });
+    
+    // Send welcome message to client
+    try {
+      ws.send(JSON.stringify({
+        type: 'welcome',
+        message: 'Connected to High Fives server'
+      }));
+    } catch (err) {
+      console.error('Error sending welcome message:', err);
+    }
+    
+    // Handle connection close
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
     });
+    
+    // Handle errors
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
+  // Set up a heartbeat interval to detect broken connections
+  const heartbeatInterval = setInterval(() => {
+    wss.clients.forEach((client) => {
+      const ws = client as WebSocket & { isAlive?: boolean };
+      
+      // If the connection is not alive, terminate it
+      if (ws.isAlive === false) {
+        return ws.terminate();
+      }
+      
+      // Mark as not alive, will be marked alive again when pong is received
+      ws.isAlive = false;
+      
+      // Send a ping (client automatically responds with pong)
+      try {
+        ws.ping();
+      } catch (err) {
+        // If ping fails, terminate the connection
+        console.error('Error sending ping:', err);
+        ws.terminate();
+      }
+    });
+  }, 30000); // check every 30 seconds
+  
+  // Clear the interval when the server closes
+  wss.on('close', () => {
+    clearInterval(heartbeatInterval);
   });
 
   return httpServer;

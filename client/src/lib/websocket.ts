@@ -47,28 +47,40 @@ export function setupWebSocket(): WebSocket | null {
       socket = null;
     };
     
+    // Track reconnection attempts at module level to prevent multiple reconnection loops
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 3;
+    
     socket.onclose = (event) => {
       console.log(`WebSocket closed with code ${event.code}: ${event.reason}`);
+      
+      // Keep socket object null to prevent multiple reconnection attempts
+      const currentSocket = socket;
       socket = null;
       
-      // Auto-reconnect after a delay, but avoid continuous reconnection attempts
-      // if we keep failing
-      const MAX_RECONNECT_ATTEMPTS = 3;
-      let reconnectAttempts = 0;
-      
-      function attemptReconnect() {
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-          reconnectAttempts++;
-          console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-          setupWebSocket();
-        } else {
-          console.log('Max reconnection attempts reached. WebSocket reconnection stopped.');
-        }
-      }
-      
-      // Only attempt reconnection for normal closures or network issues
-      if (event.code === 1000 || event.code === 1001 || event.code === 1006) {
-        setTimeout(attemptReconnect, 3000);
+      // Only attempt reconnection if this is still the current socket
+      // and if it was a normal closure or network issue
+      if (
+        currentSocket && 
+        (event.code === 1000 || event.code === 1001 || event.code === 1006) &&
+        reconnectAttempts < MAX_RECONNECT_ATTEMPTS
+      ) {
+        reconnectAttempts++;
+        console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+        
+        // Use a slightly longer delay between reconnection attempts
+        setTimeout(() => {
+          // Only try to reconnect if we still don't have a socket
+          if (!socket) {
+            setupWebSocket();
+          }
+        }, 5000); // 5 second delay
+      } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+        console.log('Max reconnection attempts reached. WebSocket reconnection stopped.');
+        // Reset reconnect attempts after a longer cool-down period
+        setTimeout(() => {
+          reconnectAttempts = 0;
+        }, 30000); // 30 second cool-down
       }
     };
     
