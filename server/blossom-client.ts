@@ -1,8 +1,10 @@
 import { uploadBlob } from 'blossom-client-sdk/actions/upload';
+import { NostrSigner } from 'blossom-client-sdk/auth';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
+import { getPublicKey, finalizeEvent } from 'nostr-tools';
 
 // Define the Blossom endpoint
 const BLOSSOM_ENDPOINT = 'https://relay.blossom.band';
@@ -30,9 +32,35 @@ export async function uploadImageToBlossom(
     const header = imageBuffer.slice(0, 8).toString('hex');
     console.log(`Image file signature (first 8 bytes): ${header}`);
     
+    // Get the Nostr private key from environment
+    const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
+    if (!privateKeyHex) {
+      throw new Error('NOSTR_PRIVATE_KEY is not set in environment variables');
+    }
+    
     try {
-      // Use uploadBlob directly from the Blossom SDK
-      const result = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer);
+      // Create a signer using the private key
+      console.log('Creating Blossom auth signer...');
+      
+      // If the private key is an nsec, decode it to get the hex
+      let hexKey = privateKeyHex;
+      if (privateKeyHex.startsWith('nsec')) {
+        try {
+          const { nip19 } = await import('nostr-tools');
+          const { data } = nip19.decode(privateKeyHex);
+          hexKey = data as string;
+        } catch (e) {
+          console.error('Invalid nsec key:', e);
+          throw new Error('Invalid Nostr private key format');
+        }
+      }
+      
+      // Create the hash signer using the private key
+      const signer = createBitcoinHashSigner(hexKey);
+      
+      // Use uploadBlob with the auth signer
+      console.log('Uploading to Blossom with auth...');
+      const result = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer, { signer });
       console.log('Blossom SDK response:', JSON.stringify(result));
       
       if (!result || !result.url) {
