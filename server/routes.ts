@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertHighFiveSchema } from "@shared/schema";
 import { publishHighFiveToNostr } from "./nostr-http";
+import { sendVerificationPin, verifyPin } from "./nostr-auth";
 import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
@@ -123,6 +124,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
   
   console.log(`Serving QR code images from ${qrCodesDir}`);
+
+  // Nostr authentication endpoints
+  app.post("/api/nostr/send-verification", async (req, res) => {
+    try {
+      const { npub } = req.body;
+      
+      if (!npub) {
+        return res.status(400).json({ message: "Missing npub parameter" });
+      }
+      
+      // Validate npub format - basic check
+      if (!npub.startsWith("npub1")) {
+        return res.status(400).json({ message: "Invalid npub format. Must start with npub1" });
+      }
+      
+      // Generate PIN and send via Nostr DM
+      const result = await sendVerificationPin(npub);
+      
+      // In a production app, we wouldn't return the PIN
+      // but for testing and development, this makes it easier
+      return res.status(200).json({ 
+        message: "Verification PIN sent successfully",
+        pin: result.pin
+      });
+    } catch (error) {
+      console.error("Error sending verification PIN:", error);
+      return res.status(500).json({ 
+        message: "Failed to send verification PIN",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  app.post("/api/nostr/verify-pin", async (req, res) => {
+    try {
+      const { npub, pin } = req.body;
+      
+      if (!npub || !pin) {
+        return res.status(400).json({ message: "Missing npub or pin parameters" });
+      }
+      
+      // Verify the PIN
+      const isValid = verifyPin(npub, pin);
+      
+      if (isValid) {
+        return res.status(200).json({ 
+          message: "PIN verified successfully",
+          verified: true
+        });
+      } else {
+        return res.status(400).json({ 
+          message: "Invalid PIN or PIN has expired",
+          verified: false
+        });
+      }
+    } catch (error) {
+      console.error("Error verifying PIN:", error);
+      return res.status(500).json({ 
+        message: "Failed to verify PIN",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   const httpServer = createServer(app);
 
