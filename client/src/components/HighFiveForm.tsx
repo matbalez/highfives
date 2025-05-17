@@ -26,10 +26,6 @@ const formSchema = z.object({
   reason: z.string().min(1, {
     message: "Please explain what you're giving the High Five for",
   }),
-  amount: z.coerce
-    .number()
-    .min(0, { message: "Amount cannot be negative" })
-    .default(0),
   sender: z.string().optional(),
 });
 
@@ -45,7 +41,6 @@ export default function HighFiveForm() {
     defaultValues: {
       recipient: "",
       reason: "",
-      amount: 100000,
       sender: "",
     },
   });
