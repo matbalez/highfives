@@ -77,13 +77,6 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
   // Function to send a DM to a Nostr pubkey with a PIN
   const sendNostrDM = async (recipientPubkey: string, pin: string) => {
     try {
-      console.log(`Sending PIN to recipient pubkey: ${recipientPubkey}`);
-      
-      // Make sure to send to the actual npub if it was provided that way
-      const actualRecipient = npub.startsWith('npub') ? npub : recipientPubkey;
-      
-      console.log(`Using recipient format: ${actualRecipient}`);
-      
       // Get the server's private key
       // In a real app, this would be securely managed on the server side
       const response = await fetch('/api/send-nostr-dm', {
@@ -92,14 +85,13 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          recipientPubkey: actualRecipient,
+          recipientPubkey,
           message: `Your High Fives verification PIN is: ${pin}`
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to send Nostr DM: ${errorData.error || response.statusText}`);
+        throw new Error('Failed to send Nostr DM');
       }
 
       return true;
