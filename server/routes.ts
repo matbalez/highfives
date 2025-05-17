@@ -88,7 +88,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Add the Nostr event ID to the response
           return res.status(201).json({
             ...highFive,
-            nostrEventId: nostrEventId
+            nostrEventId: nostrEventId,
+            senderProfileName: highFive.senderProfileName
           });
         } catch (error) {
           // Log error but don't affect the main flow

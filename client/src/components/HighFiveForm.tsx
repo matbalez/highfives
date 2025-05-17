@@ -151,10 +151,11 @@ export default function HighFiveForm() {
       // Close payment modal
       setPaymentModalOpen(false);
       
-      // Show success screen with details, including Nostr event ID if available
+      // Show success screen with details, including Nostr event ID and sender profile name if available
       setSuccessDetails({
         ...pendingHighFive,
-        nostrEventId: result.nostrEventId
+        nostrEventId: result.nostrEventId,
+        senderProfileName: result.senderProfileName
       });
       
       // Clear pending high five
