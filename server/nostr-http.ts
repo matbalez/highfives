@@ -56,7 +56,7 @@ async function generateQRCodeDataURL(data: string): Promise<string> {
 }
 
 // Also save a local copy for reference
-async function saveQRCodeLocally(data: string): Promise<string> {
+export async function saveQRCodeLocally(data: string): Promise<string> {
   try {
     // Generate a unique filename
     const filename = `${crypto.randomUUID()}.png`;

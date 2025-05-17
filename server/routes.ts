@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertHighFiveSchema } from "@shared/schema";
-import { publishHighFiveToNostr } from "./nostr-http";
+import { publishHighFiveToNostr, saveQRCodeLocally } from "./nostr-http";
 import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
@@ -59,6 +59,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Lightning invoice from request body if available
       const lightningInvoice = req.body.lightningInvoice as string | undefined;
 
+      // Generate and save QR code for any high five
+      let qrCodePath = null;
+      if (lightningInvoice) {
+        try {
+          // Save QR code locally and get the path
+          const localQrPath = await saveQRCodeLocally(lightningInvoice);
+          if (localQrPath) {
+            qrCodePath = localQrPath;
+            console.log(`Saved QR code for high five ${highFive.id} at ${qrCodePath}`);
+            
+            // Update the high five with QR code path
+            const updatedWithQr = await storage.updateHighFiveQRCodePath(highFive.id, qrCodePath);
+            if (updatedWithQr) {
+              highFive.qrCodePath = qrCodePath;
+            }
+          }
+        } catch (err) {
+          console.error('Error saving QR code:', err);
+        }
+      }
+        
       // Only proceed with Nostr publication if we have a valid lightning invoice
       if (lightningInvoice) {
         console.log('Using payment instruction for Nostr publication:', { 
@@ -85,10 +106,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           
-          // Add the Nostr event ID to the response
+          // Add the Nostr event ID and QR code path to the response
           return res.status(201).json({
             ...highFive,
             nostrEventId: nostrEventId,
+            qrCodePath: highFive.qrCodePath || null,
             senderProfileName: highFive.senderProfileName
           });
         } catch (error) {

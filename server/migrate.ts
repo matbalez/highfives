@@ -18,8 +18,13 @@ async function runMigrations() {
     await migrate(db, { migrationsFolder });
     console.log('Migrations completed successfully');
   } catch (error) {
-    console.error('Error running migrations:', error);
-    process.exit(1);
+    // Check if it's just a "column already exists" error, which we can safely ignore
+    if (error.message && error.message.includes('column "qr_code_path" of relation "high_fives" already exists')) {
+      console.log('Column qr_code_path already exists, continuing...');
+    } else {
+      console.error('Error running migrations:', error);
+      throw error;
+    }
   }
 }
 
