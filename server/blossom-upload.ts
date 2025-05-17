@@ -4,8 +4,8 @@ import fs from 'fs';
 import crypto from 'crypto';
 import path from 'path';
 
-// Blossom API endpoint for uploads
-const BLOSSOM_UPLOAD_URL = 'https://blossom.band/api/v1/upload';
+// Blossom API endpoint for uploads - FIXING URL FORMAT
+const BLOSSOM_UPLOAD_URL = 'https://api.blossom.band/v1/upload';
 
 /**
  * Uploads an image to Blossom service

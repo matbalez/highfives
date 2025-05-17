@@ -4,7 +4,7 @@ import * as QRCode from 'qrcode';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
-import { uploadQRCodeToBlossom } from './blossom-upload';
+import { uploadImageToNostrBuild } from './nostr-image-upload';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
@@ -31,11 +31,22 @@ if (!fs.existsSync(QR_CODE_DIR)) {
 }
 console.log(`Serving QR code images from ${QR_CODE_DIR}`);
 
-// Generate a QR code image, upload to Blossom, and return URL
+// Generate a QR code image, upload to nostr.build, and return URL
 async function generateQRCodeImage(data: string): Promise<string> {
   try {
-    // Generate the QR code buffer
-    const qrBuffer = await QRCode.toBuffer(data, {
+    // Generate the QR code to a temporary file
+    const filename = `${crypto.randomUUID()}.png`;
+    const tmpDir = path.join(process.cwd(), 'tmp');
+    
+    // Create tmp directory if it doesn't exist
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    
+    const tempFilePath = path.join(tmpDir, filename);
+    
+    // Generate the QR code as a PNG file
+    await QRCode.toFile(tempFilePath, data, {
       type: 'png',
       errorCorrectionLevel: 'H',
       margin: 1,
@@ -46,14 +57,37 @@ async function generateQRCodeImage(data: string): Promise<string> {
       }
     });
     
-    // Upload to Blossom and get URL
-    const blossomUrl = await uploadQRCodeToBlossom(qrBuffer);
-    console.log(`Uploaded QR code to Blossom: ${blossomUrl}`);
-    return blossomUrl;
+    try {
+      // Upload to nostr.build and get URL
+      const uploadedUrl = await uploadImageToNostrBuild(tempFilePath);
+      console.log(`Uploaded QR code to nostr.build: ${uploadedUrl}`);
+      
+      // Clean up the temporary file
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+      
+      return uploadedUrl;
+    } catch (uploadError) {
+      console.error('Error uploading to nostr.build:', uploadError);
+      
+      // Copy the file to public directory for local hosting as fallback
+      const publicFilename = `${crypto.randomUUID()}.png`;
+      const publicFilePath = path.join(QR_CODE_DIR, publicFilename);
+      fs.copyFileSync(tempFilePath, publicFilePath);
+      
+      // Clean up the temporary file
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+      
+      // Return the local path
+      return `/qr-codes/${publicFilename}`;
+    }
   } catch (error) {
-    console.error('Error uploading QR code to Blossom, falling back to local storage:', error);
+    console.error('Error generating QR code:', error);
     
-    // Fallback to local storage if Blossom upload fails
+    // Fallback to local storage if any error occurs
     const filename = `${crypto.randomUUID()}.png`;
     const filepath = path.join(QR_CODE_DIR, filename);
     
