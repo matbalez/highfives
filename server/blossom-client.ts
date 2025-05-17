@@ -157,10 +157,29 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
     
     // Upload to Blossom API
     console.log(`Uploading QR code to Blossom: ${BLOSSOM_UPLOAD_API}`);
+    
+    // Get headers from FormData and convert to regular object
+    // @ts-ignore - FormData from form-data package has getHeaders method
+    const formHeaders = formData.getHeaders();
+    const headers: Record<string, string> = {};
+    
+    // Copy headers to a regular object
+    Object.keys(formHeaders).forEach(key => {
+      headers[key] = formHeaders[key];
+    });
+    
+    // Add API key if available
+    if (BLOSSOM_API_KEY) {
+      console.log('Using BLOSSOM_API_KEY for authentication');
+      headers['x-api-key'] = BLOSSOM_API_KEY;
+    } else {
+      console.log('No BLOSSOM_API_KEY available for authentication');
+    }
+    
     const response = await fetch(BLOSSOM_UPLOAD_API, {
       method: 'POST',
       body: formData,
-      headers: formData.getHeaders()
+      headers
     });
     
     console.log(`Blossom upload response status: ${response.status}`);
