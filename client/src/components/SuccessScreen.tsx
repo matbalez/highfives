@@ -80,6 +80,20 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                   </div>
                 )}
               </div>
+              
+              {/* Nostr link */}
+              {highFive.nostrEventId && (
+                <div className="mt-4 text-center">
+                  <a 
+                    href={`https://njump.me/${highFive.nostrEventId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 text-sm font-medium underline"
+                  >
+                    See on Nostr
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

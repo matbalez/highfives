@@ -51,21 +51,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           preview: lightningInvoice.substring(0, 30) + '...'
         });
 
-        // Silently publish to Nostr without blocking the response
-        publishHighFiveToNostr({
-          recipient: validation.data.recipient,
-          reason: validation.data.reason,
-          sender: validation.data.sender || undefined,
-          lightningInvoice: lightningInvoice
-        }).catch(error => {
-          // Log error but don't affect the main flow
-          console.error('Error publishing to Nostr (non-blocking):', error);
-        });
+        try {
+          // Publish to Nostr and get the event ID
+          const nostrEventId = await publishHighFiveToNostr({
+            recipient: validation.data.recipient,
+            reason: validation.data.reason,
+            sender: validation.data.sender || undefined,
+            lightningInvoice: lightningInvoice
+          });
+          
+          // Return the high five with the Nostr event ID
+          return res.status(201).json({
+            ...highFive,
+            nostrEventId
+          });
+        } catch (error) {
+          console.error('Error publishing to Nostr:', error);
+          // Continue without Nostr event ID if there was an error
+          return res.status(201).json(highFive);
+        }
       } else {
         console.log('Skipping Nostr publication due to missing payment instruction');
+        return res.status(201).json(highFive);
       }
-      
-      return res.status(201).json(highFive);
     } catch (error) {
       console.error("Error creating high five:", error);
       return res.status(500).json({ message: "Internal server error" });
