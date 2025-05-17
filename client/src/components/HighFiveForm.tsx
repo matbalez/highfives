@@ -204,26 +204,13 @@ export default function HighFiveForm() {
                 <FormItem className="space-y-2">
                   <FormLabel className="font-futura font-bold text-lg">From:</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      {nostrUser && (
-                        <span className="absolute inset-y-0 right-3 flex items-center text-black opacity-70">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                          </svg>
-                        </span>
-                      )}
-                      <Input
-                        placeholder={nostrUser ? "Connected with Nostr" : "Your name or handle (Optional)"}
-                        className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${nostrUser ? 'bg-gray-100 cursor-not-allowed pr-10' : ''}`}
-                        readOnly={!!nostrUser}
-                        {...field}
-                      />
-                    </div>
+                    <Input
+                      placeholder={nostrUser ? "Connected with Nostr" : "Your name or handle (Optional)"}
+                      className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${nostrUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      readOnly={!!nostrUser}
+                      {...field}
+                    />
                   </FormControl>
-                  {nostrUser && (
-                    <div className="text-xs text-green-600 mt-1">✓ Connected with Nostr</div>
-                  )}
                 </FormItem>
               )}
             />
