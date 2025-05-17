@@ -115,6 +115,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint for sending Nostr DMs (for authentication)
+  app.post("/api/send-nostr-dm", async (req, res) => {
+    try {
+      const { recipientPubkey, message } = req.body;
+      
+      if (!recipientPubkey || !message) {
+        return res.status(400).json({ error: "Missing recipient pubkey or message" });
+      }
+      
+      const success = await sendNostrDM(recipientPubkey, message);
+      
+      if (success) {
+        res.status(200).json({ status: "success" });
+      } else {
+        res.status(500).json({ error: "Failed to send Nostr DM" });
+      }
+    } catch (error) {
+      console.error("Error sending Nostr DM:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Serve static QR code images from public directory
   app.use('/qr-codes', express.static(qrCodesDir, {
     index: false,
