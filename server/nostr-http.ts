@@ -117,53 +117,50 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
     
-    // Add QR code as a direct base64 image in the content
+    // Add QR code to the Nostr post - directly embed Lightning invoice
     if (highFive.lightningInvoice && qrCodeUrl) {
       try {
-        // Instead of trying to upload to an external service,
-        // we'll create a QR code directly as a data URI
-        const qrCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
-          errorCorrectionLevel: 'M',
-          margin: 2,
-          width: 256,
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
-          }
-        });
+        console.log(`Adding Lightning invoice to Nostr post: ${highFive.lightningInvoice.substring(0, 15)}...`);
+
+        // For maximum compatibility, include the full Lightning invoice text
+        // This allows wallets to detect and extract it directly
+        event.content += `\n\n## Scan to pay with Bitcoin Lightning ⚡\n\n`;
+        event.content += `\`${highFive.lightningInvoice}\``;
         
-        console.log('Generated QR code data URI for Nostr post');
+        // Most Nostr clients can detect and generate QR codes from Lightning invoices
+        // So even without embedding an image, they will often show a QR code
         
-        // Let's make a compact version that's easier for clients to handle
-        const compactQRCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
-          errorCorrectionLevel: 'L',  // Lower error correction = smaller image
-          margin: 1,
-          width: 200,  // Smaller QR code
-          color: {
-            dark: '#000000',
-            light: '#ffffff'
-          }
-        });
+        // Add Lightning invoice tags that some clients recognize
+        event.tags.push(['lightning', highFive.lightningInvoice]);
+        event.tags.push(['l', highFive.lightningInvoice]);
         
-        // First, include the Lightning invoice text so it can be copied (shortened for readability)
-        event.content += `\n\nLightning payment instruction:\n\`${highFive.lightningInvoice.substring(0, 25)}...\``;
+        // Also add a QR code data URI for clients that support it
+        try {
+          const qrCodeDataUri = await QRCode.toDataURL(highFive.lightningInvoice, {
+            errorCorrectionLevel: 'L',
+            margin: 1,
+            width: 240,
+            color: {
+              dark: '#000000',
+              light: '#ffffff'
+            }
+          });
+          
+          // Add the QR code image after the text
+          event.content += `\n\n![QR Code](${qrCodeDataUri})`;
+          
+          // Also include standard image tags
+          event.tags.push(['image', qrCodeDataUri]);
+        } catch (qrErr) {
+          console.error('Error generating QR code image:', qrErr);
+        }
         
-        // Then include the QR code as an image in the content
-        // This is the most widely supported approach across Nostr clients
-        event.content += `\n\n![QR Code for Bitcoin Lightning payment](${compactQRCodeDataUri})`;
-        
-        // Add standard Nostr tags for images that most clients recognize
-        event.tags.push(['image', compactQRCodeDataUri]);
-        
-        // Some clients also look for these tags
-        event.tags.push(['i', compactQRCodeDataUri, 'image/png', 'QR Code for Lightning payment']);
-        
-        console.log('Added QR code directly to Nostr post content');
+        console.log('Added Lightning invoice and QR code to Nostr post');
       } catch (err) {
-        console.error('Error generating QR code for Nostr post:', err);
+        console.error('Error adding Lightning details to Nostr post:', err);
         
-        // Fall back to just including the lightning invoice text
-        event.content += `\n\nLightning payment instruction: ${highFive.lightningInvoice}`;
+        // Fall back to just mentioning payment
+        event.content += `\n\nScan QR code in the original High Five app to pay with Bitcoin Lightning.`;
       }
     }
 
