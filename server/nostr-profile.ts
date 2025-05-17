@@ -66,19 +66,70 @@ export async function getLightningAddressFromNpub(npub: string): Promise<string 
  * Get profile events (kind 0) for a given pubkey
  */
 async function getProfileEvents(pool: SimplePool, pubkey: string): Promise<Event[]> {
-  // Use the getEvents method which returns a Promise with events
-  try {
-    return await pool.list(PROFILE_RELAYS, [
-      {
-        kinds: [0],
-        authors: [pubkey],
-        limit: 10
+  // SimplePool has different methods across versions - let's use a promise based approach
+  // that works with many versions of nostr-tools
+  return new Promise((resolve) => {
+    const events: Event[] = [];
+    
+    // Create a timeout to ensure we don't wait forever
+    const timeout = setTimeout(() => {
+      console.log('Timeout reached while fetching profile events');
+      resolve(events);
+    }, 6000);
+    
+    try {
+      // Use the latest method signatures
+      let subscription;
+      
+      try {
+        // Try using subscribeMany (newer versions)
+        subscription = pool.subscribeMany(
+          PROFILE_RELAYS,
+          [{ kinds: [0], authors: [pubkey] }],
+          {
+            // Event handler
+            onevent: (event: Event) => {
+              events.push(event);
+            },
+            // End of stored events handler
+            oneose: () => {
+              clearTimeout(timeout);
+              if (subscription && typeof subscription.close === 'function') {
+                subscription.close();
+              }
+              resolve(events);
+            }
+          }
+        );
+      } catch (err) {
+        console.log('Error with subscribeMany, falling back to alternate method');
+        
+        // Fallback for compatibility with different versions
+        try {
+          // Try using the sub method (older versions)
+          const sub = pool.sub(PROFILE_RELAYS, [{ kinds: [0], authors: [pubkey] }]);
+          
+          sub.on('event', (event: Event) => {
+            events.push(event);
+          });
+          
+          sub.on('eose', () => {
+            clearTimeout(timeout);
+            sub.unsub();
+            resolve(events);
+          });
+        } catch (subErr) {
+          console.error('Error with sub method as well:', subErr);
+          clearTimeout(timeout);
+          resolve(events);
+        }
       }
-    ]);
-  } catch (error) {
-    console.error('Error fetching profile events:', error);
-    return [];
-  }
+    } catch (error) {
+      console.error('Error setting up profile event subscription:', error);
+      clearTimeout(timeout);
+      resolve(events);
+    }
+  });
 }
 
 /**
