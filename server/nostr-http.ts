@@ -5,6 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { uploadImageToNostrBuild } from './nostr-image-upload';
+import { generateAndUploadQRCode } from './blossom-client';
 
 // Use WebSocket polyfill for Node.js environment
 if (typeof global !== 'undefined') {
@@ -148,6 +149,27 @@ export async function publishHighFiveToNostr(highFive: {
         // Save a local copy for display in our app
         await saveQRCodeLocally(highFive.lightningInvoice);
 
+        // Try to upload the QR code image to Blossom
+        let qrCodeUrl = '';
+        try {
+          // Upload QR code to Blossom storage
+          qrCodeUrl = await generateAndUploadQRCode(highFive.lightningInvoice);
+          if (qrCodeUrl) {
+            console.log('QR code uploaded to Blossom successfully, URL:', qrCodeUrl);
+            
+            // Add image URL tag that Nostr clients will recognize
+            event.tags.push(['image', qrCodeUrl]);
+            
+            // For compatibility with different Nostr clients
+            event.tags.push(['r', qrCodeUrl]);
+            event.tags.push(['picture', qrCodeUrl]);
+            event.tags.push(['alt', 'QR Code for Bitcoin Lightning payment']);
+          }
+        } catch (blossomErr) {
+          console.error('Error uploading QR code to Blossom:', blossomErr);
+          // Will continue without Blossom QR code image
+        }
+
         // For maximum compatibility, include the full Lightning invoice text
         // This allows wallets to detect and extract it directly
         event.content += `\n\n## Scan to pay with Bitcoin Lightning ⚡\n\n`;
@@ -156,10 +178,6 @@ export async function publishHighFiveToNostr(highFive: {
         // Add Lightning invoice tags that some clients recognize
         event.tags.push(['lightning', highFive.lightningInvoice]);
         event.tags.push(['l', highFive.lightningInvoice]);
-        
-        // Many Nostr clients will automatically generate QR codes from the invoice text
-        // Some will even recognize the lightning: prefix and make it clickable
-        // We don't need to add an image tag since the invoice itself is included
         
         console.log('Added Lightning invoice to Nostr post');
       } catch (err) {
