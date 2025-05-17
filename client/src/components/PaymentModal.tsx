@@ -6,9 +6,6 @@ import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
-// Fallback Lightning invoice to use if lookup fails
-const FALLBACK_INVOICE = "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qfj78rhhtjxpghmyqgtmtpntmh2f5fee4zs094je6vly080f7kgsyqsrxwawhx2pdpkm6zy5rsgvvs3w8mpucvudl7dmql4hxg6g8hhjfkkqqvakre23kt02d6nsc5cwrw9dwap3m73jdl7r6nv4nyufh89nc62e0eh9xh6x0a7uqna2g0cty6razaq2kxrrq2wdpfqplvjxdrfzrp4a7dsyhtlgmnrggklu90ck6j3j8wasaq7auqqs2gvv2zuwg446m8p6z5490hyusy";
-
 interface PaymentModalProps {
   isOpen: boolean;
   highFiveDetails: HighFiveDetails;
@@ -33,6 +30,7 @@ export default function PaymentModal({
     if (isOpen && highFiveDetails.recipient) {
       setIsLoading(true);
       setError(null);
+      setPaymentInstructions(null);
       
       // Assume the recipient field contains the btag
       const btag = highFiveDetails.recipient;
@@ -46,22 +44,35 @@ export default function PaymentModal({
         })
         .catch(err => {
           console.error("Error fetching payment instructions:", err);
-          setError("Could not find payment instructions for this recipient. Using fallback payment method.");
-          setPaymentInstructions(FALLBACK_INVOICE); // Use fallback for now
+          setError("Could not find payment instructions for this recipient. Please check the btag format.");
           setIsLoading(false);
-          
-          toast({
-            title: "Payment Lookup Error",
-            description: "Using fallback payment method. Please check the recipient's btag.",
-            variant: "destructive",
-          });
+          // Close the modal after a short delay
+          setTimeout(() => {
+            onClose();
+            
+            toast({
+              title: "Payment Lookup Error",
+              description: "No payment instructions found for this recipient. Please verify the btag format.",
+              variant: "destructive",
+            });
+          }, 2000);
         });
     }
-  }, [isOpen, highFiveDetails.recipient, toast]);
+  }, [isOpen, highFiveDetails.recipient, toast, onClose]);
 
   const handleConfirmPayment = () => {
-    // Use the fetched payment instructions or fallback
-    onConfirmPayment(paymentInstructions || FALLBACK_INVOICE);
+    // Only proceed if we have valid payment instructions
+    if (paymentInstructions) {
+      onConfirmPayment(paymentInstructions);
+    } else {
+      // Should never happen now, but just in case
+      toast({
+        title: "Error",
+        description: "No valid payment instructions available.",
+        variant: "destructive",
+      });
+      onClose();
+    }
   };
 
   return (
