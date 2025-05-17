@@ -9,6 +9,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { WebSocketServer } from 'ws';
 import express from 'express';
+import { lookupPaymentInstructions } from "./dns-util";
 
 // Create public directory and qr-codes subdirectory if they don't exist
 const publicDir = path.join(process.cwd(), 'public');
@@ -39,8 +40,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Lightning invoice from request body if available
       const lightningInvoice = req.body.lightningInvoice as string | undefined;
 
-      // Always use the provided Lightning invoice
-      const effectiveInvoice = "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qfj78rhhtjxpghmyqgtmtpntmh2f5fee4zs094je6vly080f7kgsyqsrxwawhx2pdpkm6zy5rsgvvs3w8mpucvudl7dmql4hxg6g8hhjfkkqqvakre23kt02d6nsc5cwrw9dwap3m73jdl7r6nv4nyufh89nc62e0eh9xh6x0a7uqna2g0cty6razaq2kxrrq2wdpfqplvjxdrfzrp4a7dsyhtlgmnrggklu90ck6j3j8wasaq7auqqs2gvv2zuwg446m8p6z5490hyusy";
+      // Use the provided Lightning invoice from the client
+      // This should now be the payment instruction looked up from DNS
+      const effectiveInvoice = lightningInvoice || "lno1zrxq8pjw7qjlm68mtp7e3yvxee4y5xrgjhhyf2fxhlphpckrvevh50u0qfj78rhhtjxpghmyqgtmtpntmh2f5fee4zs094je6vly080f7kgsyqsrxwawhx2pdpkm6zy5rsgvvs3w8mpucvudl7dmql4hxg6g8hhjfkkqqvakre23kt02d6nsc5cwrw9dwap3m73jdl7r6nv4nyufh89nc62e0eh9xh6x0a7uqna2g0cty6razaq2kxrrq2wdpfqplvjxdrfzrp4a7dsyhtlgmnrggklu90ck6j3j8wasaq7auqqs2gvv2zuwg446m8p6z5490hyusy";
+
+      // Log what we're using
+      console.log('Using payment instruction for Nostr publication:', { 
+        type: lightningInvoice ? 'from DNS lookup' : 'fallback',
+        preview: effectiveInvoice.substring(0, 30) + '...'
+      });
 
       // Silently publish to Nostr without blocking the response
       publishHighFiveToNostr({
@@ -67,6 +75,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching high fives:", error);
       return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // New endpoint for looking up payment instructions
+  app.get("/api/payment-instructions", async (req, res) => {
+    try {
+      const { btag } = req.query;
+      
+      if (!btag || typeof btag !== 'string') {
+        return res.status(400).json({ 
+          message: "Missing or invalid 'btag' parameter",
+          details: "Please provide a valid btag in the format user@domain.com" 
+        });
+      }
+      
+      console.log(`Looking up payment instructions for btag: ${btag}`);
+      const paymentInstructions = await lookupPaymentInstructions(btag);
+      
+      if (!paymentInstructions) {
+        return res.status(404).json({ 
+          message: "Payment instructions not found",
+          details: "Could not find payment instructions for the specified btag" 
+        });
+      }
+      
+      return res.status(200).json({ 
+        btag,
+        paymentInstructions
+      });
+    } catch (error) {
+      console.error("Error looking up payment instructions:", error);
+      return res.status(500).json({ 
+        message: "Internal server error",
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
