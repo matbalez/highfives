@@ -4,38 +4,12 @@ import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 import fetch from 'node-fetch';
 import FormData from 'form-data';
-import { BlossomClient } from 'blossom-client-sdk';
-import { finalizeEvent, getEventHash, type EventTemplate, type UnsignedEvent } from 'nostr-tools';
 
-// Define the Blossom server URL
-const BLOSSOM_SERVER_URL = 'https://api.blossom.band';
-
-// Generate a private key for signing the upload auth events if not provided in env
-const blossomPrivateKey = process.env.BLOSSOM_PRIVATE_KEY || crypto.randomBytes(32).toString('hex');
-
-// Create a signer function to use with BlossomClient
-const nostrSigner = async (draft: EventTemplate) => {
-  try {
-    // Create an unsigned event with our private key
-    const pubkey = crypto.createHash('sha256').update(blossomPrivateKey).digest('hex');
-    const event: UnsignedEvent = { ...draft, pubkey };
-    
-    // Create a hash of the event to sign
-    const id = getEventHash(event);
-    
-    // Sign the event (simplified version for this demo)
-    const signedData = crypto.createHmac('sha256', blossomPrivateKey).update(id).digest('hex');
-    
-    // Return the signed event
-    return { ...event, id, sig: signedData };
-  } catch (error) {
-    console.error('Error signing event:', error);
-    throw error;
-  }
-};
+// Define the Blossom API endpoint
+const BLOSSOM_UPLOAD_API = 'https://api.blossom.band/v1/upload';
 
 /**
- * Uploads an image to Blossom service using the Blossom client SDK
+ * Uploads an image to Blossom service
  * @param imageBuffer Buffer containing the image data to upload
  * @param mimeType MIME type of the image (e.g., 'image/png')
  * @returns Promise resolving to the URL of the uploaded image
@@ -44,83 +18,92 @@ export async function uploadImageToBlossom(
   imageBuffer: Buffer,
   mimeType: string = 'image/png'
 ): Promise<string> {
+  let tempFilePath = '';
+  
   try {
-    console.log('Preparing to upload to Blossom using SDK...');
+    console.log('Preparing to upload to Blossom...');
     console.log(`Uploading ${imageBuffer.length} bytes to Blossom with MIME type ${mimeType}...`);
     
     if (!imageBuffer || imageBuffer.length === 0) {
       throw new Error('Empty image buffer provided for Blossom upload');
     }
     
+    // Create a temporary file from the buffer
+    const tmpDir = path.join(process.cwd(), 'tmp');
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    
+    tempFilePath = path.join(tmpDir, `blossom-upload-${crypto.randomUUID()}.png`);
+    fs.writeFileSync(tempFilePath, imageBuffer);
+    
+    console.log(`Created temporary file for upload: ${tempFilePath}`);
+    
     try {
-      // Create a file object for the SDK
-      const filename = `image-${crypto.randomUUID()}.png`;
-      const fileDescription = `Image upload from High Fives App - ${new Date().toISOString()}`;
+      // Create form data for the upload
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(tempFilePath));
       
-      // Create a temporary file to pass to the Blossom SDK
-      const tmpDir = path.join(process.cwd(), 'tmp');
-      if (!fs.existsSync(tmpDir)) {
-        fs.mkdirSync(tmpDir, { recursive: true });
+      // Upload to Blossom API
+      console.log(`Uploading to Blossom API: ${BLOSSOM_UPLOAD_API}`);
+      const response = await fetch(BLOSSOM_UPLOAD_API, {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders()
+      });
+      
+      // Check if the upload was successful
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Blossom API responded with status ${response.status}: ${errorText}`);
       }
       
-      const tempFilePath = path.join(tmpDir, filename);
-      fs.writeFileSync(tempFilePath, imageBuffer);
+      // Parse the response
+      const result = await response.json() as any;
+      console.log('Blossom API response:', JSON.stringify(result));
       
-      // Create a file object that looks like a browser file
-      const file = {
-        buffer: imageBuffer,
-        name: filename,
-        size: imageBuffer.length,
-        type: mimeType,
-        path: tempFilePath
-      };
-      
-      console.log('Creating Blossom upload auth...');
-      
-      // Create upload auth event with our signer
-      const uploadAuth = await BlossomClient.createUploadAuth(
-        file,
-        nostrSigner, 
-        { message: fileDescription }
-      );
-      
-      console.log('Created Blossom auth event successfully');
-      
-      // Manually do the upload to the server
-      const result = await BlossomClient.uploadBlob(BLOSSOM_SERVER_URL, file, uploadAuth);
-      
-      // Clean up the temporary file
-      try {
-        fs.unlinkSync(tempFilePath);
-        console.log(`Cleaned up temporary file: ${tempFilePath}`);
-      } catch (cleanupError) {
-        console.error('Error cleaning up temporary file:', cleanupError);
+      if (!result) {
+        throw new Error('Blossom upload failed: Empty response');
       }
       
-      if (!result || !result.url) {
+      if (!result.success) {
+        throw new Error(`Blossom upload failed: ${result.message || 'Unknown error'}`);
+      }
+      
+      if (!result.url) {
         throw new Error('Blossom upload failed: Missing URL in response');
       }
       
-      // The result contains the URL of the uploaded image
+      // Return the URL of the uploaded image
       console.log('Blossom upload successful, image URL:', result.url);
       return result.url;
-    } catch (uploadError) {
-      console.error('Detailed Blossom error:', uploadError);
-      if (uploadError instanceof Error) {
-        console.error('Error name:', uploadError.name);
-        console.error('Error message:', uploadError.message);
-        console.error('Error stack:', uploadError.stack);
+    } finally {
+      // Clean up the temporary file
+      if (fs.existsSync(tempFilePath)) {
+        try {
+          fs.unlinkSync(tempFilePath);
+          console.log(`Cleaned up temporary file: ${tempFilePath}`);
+        } catch (cleanupError) {
+          console.error('Error cleaning up temporary file:', cleanupError);
+        }
       }
-      throw uploadError;
     }
   } catch (error) {
     console.error('Error uploading to Blossom:', error);
+    
+    // Additional error logging
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     throw new Error(`Failed to upload image to Blossom: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 /**
- * Generates a QR code PNG image and uploads it to Blossom
+ * Generates a QR code PNG image and uploads it to Blossom API
  * @param data The string data to encode in the QR code
  * @returns Promise resolving to the URL of the uploaded image
  */
@@ -128,7 +111,7 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
   let tempFilePath = '';
   
   try {
-    console.log('Starting QR code generation process...');
+    console.log('Starting QR code generation process for Lightning invoice...');
     
     // Create a temporary directory if it doesn't exist
     const tmpDir = path.join(process.cwd(), 'tmp');
@@ -136,12 +119,13 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
       fs.mkdirSync(tmpDir, { recursive: true });
     }
     
-    // Generate a unique filename for the QR code
+    // Generate a temporary filename
     const filename = `qrcode-${crypto.randomUUID()}.png`;
     tempFilePath = path.join(tmpDir, filename);
     
-    // Generate the QR code directly to a file
-    console.log(`Generating QR code to: ${tempFilePath}`);
+    console.log(`Generating QR code to file: ${tempFilePath}`);
+    
+    // Generate QR code as a PNG file
     await new Promise<void>((resolve, reject) => {
       QRCode.toFile(tempFilePath, data, {
         errorCorrectionLevel: 'H',
@@ -152,73 +136,60 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
           light: '#ffffff'
         }
       }, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
+        if (err) reject(err);
+        else resolve();
       });
     });
     
-    console.log(`QR code file created successfully`);
-    
-    // Verify file was created and has content
+    // Verify the file was created
     if (!fs.existsSync(tempFilePath)) {
       throw new Error(`QR code file was not created at ${tempFilePath}`);
     }
     
     const stats = fs.statSync(tempFilePath);
-    console.log(`QR code file size: ${stats.size} bytes`);
-    
-    if (stats.size === 0) {
-      throw new Error('Generated QR code file is empty');
-    }
-    
-    // Read the file into a buffer
-    const qrCodeBuffer = fs.readFileSync(tempFilePath);
+    console.log(`Generated QR code file size: ${stats.size} bytes`);
     
     try {
-      // Create a description for the QR code
-      const fileDescription = `QR Code for Lightning Invoice - ${new Date().toISOString()}`;
+      // Create form data for the upload
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(tempFilePath));
       
-      // Create a file-like object for the Blossom SDK
-      const file = {
-        buffer: qrCodeBuffer,
-        name: filename,
-        size: qrCodeBuffer.length,
-        type: 'image/png',
-        path: tempFilePath
-      };
+      // Upload to the Blossom API
+      console.log(`Uploading QR code to Blossom API: ${BLOSSOM_UPLOAD_API}`);
       
-      console.log('Creating Blossom upload auth for QR code...');
+      const response = await fetch(BLOSSOM_UPLOAD_API, {
+        method: 'POST',
+        body: formData,
+        headers: formData.getHeaders()
+      });
       
-      // Create upload auth event with our signer
-      const uploadAuth = await BlossomClient.createUploadAuth(
-        file,
-        nostrSigner, 
-        { message: fileDescription }
-      );
+      // Log response status
+      console.log(`Blossom API response status: ${response.status}`);
       
-      console.log('Created Blossom auth event successfully for QR code');
+      // Check if the upload was successful
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Blossom API responded with status ${response.status}: ${errorText}`);
+      }
       
-      // Upload the blob to the Blossom server
-      const result = await BlossomClient.uploadBlob(BLOSSOM_SERVER_URL, file, uploadAuth);
+      // Parse the response
+      const result = await response.json() as any;
+      console.log('Blossom API response:', JSON.stringify(result));
       
-      console.log(`Blossom upload response:`, result);
+      // Check if we have a successful response with a URL
+      if (!result || !result.success) {
+        throw new Error(`Blossom upload failed: ${result?.message || 'Unknown error'}`);
+      }
       
-      // Extract URL
-      if (!result || !result.url) {
+      if (!result.url) {
         throw new Error('Blossom upload failed: Missing URL in response');
       }
       
       console.log(`QR code successfully uploaded to Blossom: ${result.url}`);
       return result.url;
-    } catch (uploadError) {
-      console.error('Detailed Blossom error:', uploadError);
-      throw uploadError;
     } finally {
-      // Clean up temporary file if it exists
-      if (tempFilePath && fs.existsSync(tempFilePath)) {
+      // Always clean up the temporary file
+      if (fs.existsSync(tempFilePath)) {
         try {
           fs.unlinkSync(tempFilePath);
           console.log(`Cleaned up temporary file: ${tempFilePath}`);
@@ -228,25 +199,12 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
       }
     }
   } catch (error) {
-    console.error('Error generating and uploading QR code:', error);
-    
-    // Additional error logging
+    console.error('Error generating or uploading QR code:', error);
     if (error instanceof Error) {
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
-    
-    // Clean up temporary file if it exists
-    if (tempFilePath && fs.existsSync(tempFilePath)) {
-      try {
-        fs.unlinkSync(tempFilePath);
-        console.log(`Cleaned up temporary file after error: ${tempFilePath}`);
-      } catch (cleanupError) {
-        console.error('Error cleaning up temporary file:', cleanupError);
-      }
-    }
-    
-    throw new Error(`Blossom upload failed: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
   }
 }
