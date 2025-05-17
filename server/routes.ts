@@ -141,7 +141,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Also get profile name if available
           const { getProfileNameFromNpub } = require('./nostr-profile');
           const profileName = await getProfileNameFromNpub(btag);
-          console.log(`Lookup completed - Profile name: ${profileName || 'Not found'} for npub: ${btag}`);
           
           // Generate an actual Lightning invoice (payment request)
           const amount = 21000; // 21,000 sats for the High Five
