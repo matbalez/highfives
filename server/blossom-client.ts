@@ -142,14 +142,17 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
       throw new Error('Generated QR code file is empty');
     }
     
-    // Create an uploader instance
-    const uploader = new BlossomDirectUploader({
-      relayUrl: BLOSSOM_SERVER_URL
-    });
+    // Create form data for the upload
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(filename));
     
-    // Upload file to Blossom
-    console.log('Uploading QR code to Blossom...');
-    const imageUrl = await uploader.uploadFile(filename);
+    // Upload to Blossom API
+    console.log(`Uploading QR code to Blossom API: ${BLOSSOM_UPLOAD_API}`);
+    const response = await fetch(BLOSSOM_UPLOAD_API, {
+      method: 'POST',
+      body: formData,
+      headers: formData.getHeaders()
+    });
     
     // Clean up the temporary file
     console.log(`Cleaning up temporary file: ${filename}`);
@@ -157,13 +160,23 @@ export async function generateAndUploadQRCode(data: string): Promise<string> {
       fs.unlinkSync(filename);
     }
     
-    if (!imageUrl) {
-      throw new Error('Blossom upload failed: No URL returned');
+    // Check if the upload was successful
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Blossom API responded with status ${response.status}: ${errorText}`);
+    }
+    
+    // Parse the response
+    const result = await response.json() as any;
+    console.log('Blossom API response:', JSON.stringify(result));
+    
+    if (!result || !result.url) {
+      throw new Error('Blossom upload failed: Missing URL in response');
     }
     
     // The result contains the URL of the uploaded image
-    console.log(`QR code successfully uploaded to Blossom: ${imageUrl}`);
-    return imageUrl;
+    console.log(`QR code successfully uploaded to Blossom: ${result.url}`);
+    return result.url;
   } catch (error) {
     console.error('Error generating and uploading QR code:', error);
     
