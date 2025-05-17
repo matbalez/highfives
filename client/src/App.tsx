@@ -9,7 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { StoreProvider } from "./lib/store";
 import { useEffect } from "react";
-import { setupWebSocket, closeWebSocket } from "./lib/websocket";
+import { setupWebSocket } from "./lib/websocket";
 
 function Router() {
   return (
@@ -21,8 +21,21 @@ function Router() {
 }
 
 function App() {
-  // Don't initialize WebSocket connection in App component
-  // This will be done only when needed for specific features
+  // Initialize WebSocket connection when the app loads
+  useEffect(() => {
+    // Only setup WebSocket in browser environment
+    if (typeof window !== 'undefined') {
+      // Setup WebSocket connection with proper error handling
+      const ws = setupWebSocket();
+      
+      // Clean up WebSocket connection when component unmounts
+      return () => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    }
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>
