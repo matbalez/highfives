@@ -22,8 +22,6 @@ if (!fs.existsSync(qrCodesDir)) {
   fs.mkdirSync(qrCodesDir, { recursive: true });
 }
 
-import { sendNostrDM } from './nostr-dm';
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for high fives
   app.post("/api/high-fives", async (req, res) => {
@@ -112,28 +110,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Internal server error",
         details: error instanceof Error ? error.message : String(error)
       });
-    }
-  });
-
-  // API endpoint for sending Nostr DMs (for authentication)
-  app.post("/api/send-nostr-dm", async (req, res) => {
-    try {
-      const { recipientPubkey, message } = req.body;
-      
-      if (!recipientPubkey || !message) {
-        return res.status(400).json({ error: "Missing recipient pubkey or message" });
-      }
-      
-      const success = await sendNostrDM(recipientPubkey, message);
-      
-      if (success) {
-        res.status(200).json({ status: "success" });
-      } else {
-        res.status(500).json({ error: "Failed to send Nostr DM" });
-      }
-    } catch (error) {
-      console.error("Error sending Nostr DM:", error);
-      res.status(500).json({ error: "Internal server error" });
     }
   });
 
