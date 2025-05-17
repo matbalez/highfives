@@ -65,7 +65,7 @@ export default function PaymentModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md p-6">
         <DialogTitle className="text-center text-xl font-bold">
           Send your bitcoin now
@@ -96,7 +96,7 @@ export default function PaymentModal({
               </div>
               
               <div className="text-center mt-4 text-sm text-gray-600">
-                Scan this QR code with your Lightning wallet to complete the payment
+                Scan with a BOLT12 wallet
               </div>
               
               {/* Small indicator showing where the payment instruction was found */}
