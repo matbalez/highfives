@@ -36,6 +36,8 @@ export default function HighFiveForm() {
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingHighFive, setPendingHighFive] = useState<HighFiveDetails | null>(null);
+  // State to track input mode (false = easy address, true = npub)
+  const [isNpubMode, setIsNpubMode] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,6 +58,11 @@ export default function HighFiveForm() {
       form.setValue("sender", "");
     }
   }, [nostrUser, form]);
+
+  // Clear the recipient field when switching between modes
+  useEffect(() => {
+    form.setValue("recipient", "");
+  }, [isNpubMode, form]);
 
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
@@ -190,19 +197,32 @@ export default function HighFiveForm() {
               name="recipient"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
+                    <button 
+                      type="button"
+                      onClick={() => setIsNpubMode(!isNpubMode)}
+                      className="text-xs text-primary hover:text-primary/80 font-medium"
+                    >
+                      {isNpubMode ? "Use easy address" : "Use npub"}
+                    </button>
+                  </div>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
+                      {!isNpubMode && (
+                        <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
+                      )}
                       <Input
-                        placeholder="Enter a Bitcoin Address or npub"
-                        className="p-3 pl-8 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal"
+                        placeholder={isNpubMode ? "Enter an npub" : "Enter an Easy Bitcoin Address"}
+                        className={`p-3 ${isNpubMode ? 'pl-3' : 'pl-8'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
                         {...field}
                       />
                     </div>
                   </FormControl>
                   <div className="text-xs text-gray-500 pl-1">
-                    Supports: user@domain.com or Nostr npub
+                    {isNpubMode
+                      ? "Enter a Nostr npub (starts with npub1...)"
+                      : "Format: user@domain.com"}
                   </div>
                 </FormItem>
               )}
