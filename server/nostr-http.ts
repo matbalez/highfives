@@ -259,9 +259,7 @@ function formatHighFiveContent(
   const parts = [
     `🖐️ High Five 🖐️ to ${recipientPart} from ${senderPart}`,
     '',
-    highFive.reason,
-    '',
-    '🖐️ High Five 🖐️'
+    highFive.reason
   ];
   
   // Add the payment instruction if available
