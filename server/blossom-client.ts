@@ -1,11 +1,10 @@
-import { BlossomClient } from 'blossom-client-sdk';
+import { uploadBlob } from 'blossom-client-sdk/actions/upload';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
 
-// Define the Blossom public key for the HighFive
-const HIGH_FIVE_PUBKEY = 'npub1vm9yc8sxa6e86duudxlmdullx9w89lxk3ucmkzj8c7yrfg5k8ueqk8j8wu';
+// Define the Blossom endpoint
 const BLOSSOM_ENDPOINT = 'https://relay.blossom.band';
 
 /**
@@ -19,19 +18,14 @@ export async function uploadImageToBlossom(
   mimeType: string = 'image/png'
 ): Promise<string> {
   try {
-    console.log('Initializing Blossom client...');
-    const client = new BlossomClient({
-      endpoint: BLOSSOM_ENDPOINT,
-    });
-
+    console.log('Preparing to upload to Blossom...');
     console.log(`Uploading ${imageBuffer.length} bytes to Blossom...`);
-    const result = await client.uploadImage(imageBuffer, {
-      owner: HIGH_FIVE_PUBKEY,
-      contentType: mimeType,
-      alt: 'QR Code for Bitcoin Lightning payment',
-    });
+    
+    // Use uploadBlob directly
+    const result = await uploadBlob(new URL(BLOSSOM_ENDPOINT), imageBuffer);
 
-    console.log('Blossom upload result:', result);
+    // The result contains the URL of the uploaded image
+    console.log('Blossom upload successful, image URL:', result.url);
     return result.url;
   } catch (error) {
     console.error('Error uploading to Blossom:', error);
