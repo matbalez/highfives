@@ -1,4 +1,4 @@
-import { SimplePool, finalizeEvent, getPublicKey, nip19, getEventHash, signEvent, type Event } from 'nostr-tools';
+import { SimplePool, finalizeEvent, getPublicKey, nip19, getEventHash, type Event } from 'nostr-tools';
 import WebSocket from 'ws';
 import * as QRCode from 'qrcode';
 import path from 'path';
@@ -190,33 +190,51 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // Sign the event with proper key handling
-    let signedEvent;
+    // Sign the event
     try {
-      signedEvent = finalizeEvent(event, hexKey);
-      // Get the event ID
-      const eventId = signedEvent.id;
-      console.log(`Generated Nostr event with ID: ${eventId}`);
+      // Use finalizeEvent to sign the event properly
+      // Convert hex key to Uint8Array if needed
+      const keyArray = hexToUint8Array(hexKey);
+      const signedEvent = finalizeEvent(event, keyArray);
+      
+      console.log(`Generated Nostr event with ID: ${signedEvent.id}`);
+      
+      // Publish to relays
+      const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
+      
+      // Wait for at least one successful publication
+      await Promise.any(pubs);
+      
+      console.log(`High Five successfully published to Nostr with ID: ${signedEvent.id}`);
+      
+      // Return the event ID
+      return signedEvent.id;
     } catch (signError) {
-      console.error('Error signing Nostr event:', signError);
+      console.error('Error signing or publishing Nostr event:', signError);
       return null;
     }
-    
-    // Publish to relays
-    const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
-    
-    // Wait for at least one successful publication
-    await Promise.any(pubs);
-    
-    console.log(`High Five successfully published to Nostr with ID: ${eventId}`);
-    
-    // Return the event ID
-    return eventId;
   } catch (error) {
     // Don't let Nostr errors affect the main application
     console.error('Error publishing to Nostr:', error);
     return null;
   }
+}
+
+// Helper function to convert hex string to Uint8Array
+function hexToUint8Array(hexString: string): Uint8Array {
+  // Remove 0x prefix if present
+  const hex = hexString.startsWith('0x') ? hexString.slice(2) : hexString;
+  
+  // Create byte array
+  const len = hex.length / 2;
+  const bytes = new Uint8Array(len);
+  
+  // Convert hex to bytes
+  for (let i = 0; i < len; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  
+  return bytes;
 }
 
 // Format high five content
