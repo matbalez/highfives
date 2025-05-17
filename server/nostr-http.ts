@@ -1,4 +1,4 @@
-import { SimplePool, finalizeEvent, getPublicKey, nip19, type Event } from 'nostr-tools';
+import { SimplePool, finalizeEvent, getPublicKey, nip19, getEventHash, signEvent, type Event } from 'nostr-tools';
 import WebSocket from 'ws';
 import * as QRCode from 'qrcode';
 import path from 'path';
@@ -96,7 +96,7 @@ export async function publishHighFiveToNostr(highFive: {
     const privateKeyHex = process.env.NOSTR_PRIVATE_KEY;
     if (!privateKeyHex) {
       console.error('Cannot publish to Nostr: NOSTR_PRIVATE_KEY is not set');
-      return;
+      return null;
     }
 
     // Handle nsec format if needed
@@ -107,12 +107,14 @@ export async function publishHighFiveToNostr(highFive: {
         hexKey = data as string;
       } catch (e) {
         console.error('Invalid nsec key:', e);
-        return;
+        return null;
       }
     }
+    
+    console.log('Successfully processed Nostr private key');
 
     // Get public key from private key
-    const publicKey = getPublicKey(hexKey as unknown as Uint8Array);
+    const publicKey = getPublicKey(hexKey);
     console.log(`Publishing High Five to Nostr using public key: ${publicKey}`);
 
     // Default content without QR code
@@ -188,11 +190,17 @@ export async function publishHighFiveToNostr(highFive: {
       }
     }
 
-    // Sign the event
-    const signedEvent = finalizeEvent(event, hexKey as unknown as Uint8Array);
-
-    // Get the event ID
-    const eventId = signedEvent.id;
+    // Sign the event with proper key handling
+    let signedEvent;
+    try {
+      signedEvent = finalizeEvent(event, hexKey);
+      // Get the event ID
+      const eventId = signedEvent.id;
+      console.log(`Generated Nostr event with ID: ${eventId}`);
+    } catch (signError) {
+      console.error('Error signing Nostr event:', signError);
+      return null;
+    }
     
     // Publish to relays
     const pubs = pool.publish(NOSTR_RELAYS, signedEvent);
