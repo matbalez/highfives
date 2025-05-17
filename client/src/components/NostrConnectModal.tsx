@@ -1,201 +1,280 @@
-import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { useStore } from "@/lib/store";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import { Label } from "@/components/ui/label";
+import { nip19 } from "nostr-tools";
+import { InputOTP, InputOTPGroup } from "@/components/ui/input-otp";
+import { CheckCircle, AlertCircle } from "lucide-react";
+
+type NostrConnectStep = 'npub' | 'pin' | 'success' | 'error';
 
 interface NostrConnectModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConnected: (npub: string) => void;
 }
 
-enum ConnectStep {
-  ENTER_NPUB,
-  ENTER_PIN,
-}
+// Custom InputOTPSlot component
+const InputOTPSlot = ({ char, hasFakeCaret, isActive, className }: { 
+  char: string | null;
+  hasFakeCaret: boolean;
+  isActive: boolean;
+  className?: string;
+}) => {
+  return (
+    <div
+      className={`relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md ${
+        isActive ? 'z-10 ring-2 ring-ring ring-offset-background' : ''
+      } ${className || ''}`}
+    >
+      {char}
+      {hasFakeCaret && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+        </div>
+      )}
+    </div>
+  );
+};
 
-export default function NostrConnectModal({
-  isOpen,
-  onClose,
-  onConnected,
-}: NostrConnectModalProps) {
-  const { toast } = useToast();
-  const [step, setStep] = useState<ConnectStep>(ConnectStep.ENTER_NPUB);
-  const [npub, setNpub] = useState("");
-  const [pin, setPin] = useState("");
-  const [expectedPin, setExpectedPin] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModalProps) {
+  const { setNostrUser } = useStore();
+  const [step, setStep] = useState<NostrConnectStep>('npub');
+  const [npub, setNpub] = useState<string>('');
+  const [pubkey, setPubkey] = useState<string>('');
+  const [pin, setPin] = useState<string>('');
+  const [generatedPin, setGeneratedPin] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when modal opens
+  // Reset the form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setStep(ConnectStep.ENTER_NPUB);
-      setNpub("");
-      setPin("");
+      setStep('npub');
+      setNpub('');
+      setPubkey('');
+      setPin('');
+      setGeneratedPin('');
       setError(null);
     }
   }, [isOpen]);
 
-  const handleNpubSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!npub) {
-      setError("Please enter your Nostr public key (npub)");
-      return;
-    }
-    
-    // Basic validation for npub format
-    if (!npub.startsWith("npub1")) {
-      setError("Invalid npub format. Nostr public keys start with npub1");
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
+  // Function to generate a random 4-digit PIN
+  const generatePin = () => {
+    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    setGeneratedPin(pin);
+    return pin;
+  };
+
+  // Function to send a DM to a Nostr pubkey with a PIN
+  const sendNostrDM = async (recipientPubkey: string, pin: string) => {
     try {
-      // Send request to backend to generate PIN and send DM
-      const response = await axios.post("/api/nostr/send-verification", { npub });
-      
-      // Server returns the PIN for verification (in a real app, this would only be stored on server)
-      setExpectedPin(response.data.pin);
-      
-      // Move to PIN entry step
-      setStep(ConnectStep.ENTER_PIN);
-      
-      toast({
-        title: "Verification PIN Sent",
-        description: "Check your Nostr client for a DM containing your verification PIN",
+      // Get the server's private key
+      // In a real app, this would be securely managed on the server side
+      const response = await fetch('/api/send-nostr-dm', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientPubkey,
+          message: `Your High Fives verification PIN is: ${pin}`
+        }),
       });
-    } catch (err: any) {
-      console.error("Error sending verification PIN:", err);
-      setError(err.response?.data?.message || "Failed to send verification PIN. Please try again.");
-      
-      toast({
-        title: "Verification Failed",
-        description: "Could not send verification PIN to your Nostr account",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+
+      if (!response.ok) {
+        throw new Error('Failed to send Nostr DM');
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Error sending Nostr DM:', err);
+      return false;
     }
   };
 
-  const handlePinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!pin) {
-      setError("Please enter the PIN sent to your Nostr account");
-      return;
-    }
-    
-    setIsLoading(true);
+  // Handle NIP-19 npub submission
+  const handleNpubSubmit = async () => {
+    setLoading(true);
     setError(null);
-    
+
     try {
-      // Verify PIN client-side (in a real app, verification would be done on server)
-      if (pin === expectedPin) {
-        // Save npub to local storage for persistence
-        localStorage.setItem("connectedNpub", npub);
-        
-        toast({
-          title: "Successfully Connected",
-          description: "Your Nostr account has been connected",
-        });
-        
-        // Notify parent component about successful connection
-        onConnected(npub);
-        
-        // Close modal
-        onClose();
+      // Validate the npub format
+      if (!npub.startsWith('npub1')) {
+        throw new Error('Invalid npub format. It should start with "npub1"');
+      }
+
+      // Decode the npub to get the pubkey
+      const decoded = nip19.decode(npub);
+      if (decoded.type !== 'npub') {
+        throw new Error('Invalid npub format');
+      }
+
+      const decodedPubkey = decoded.data as string;
+      setPubkey(decodedPubkey);
+
+      // Generate a PIN and send it as a DM
+      const pin = generatePin();
+      const dmSent = await sendNostrDM(decodedPubkey, pin);
+
+      if (dmSent) {
+        setStep('pin');
       } else {
-        setError("Incorrect PIN. Please check the PIN sent to your Nostr account.");
-        
-        toast({
-          title: "Verification Failed",
-          description: "The PIN you entered is incorrect",
-          variant: "destructive",
-        });
+        throw new Error('Failed to send verification PIN. Please try again.');
       }
     } catch (err) {
-      console.error("Error verifying PIN:", err);
-      setError("Failed to verify PIN. Please try again.");
+      console.error('Error in npub handling:', err);
+      setError((err as Error).message || 'Failed to connect with Nostr');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  };
+
+  // Handle PIN verification
+  const handlePinVerify = () => {
+    if (pin === generatedPin) {
+      // PIN matches, set the user as connected
+      setNostrUser(npub);
+      setStep('success');
+    } else {
+      setError('Incorrect PIN. Please try again.');
+    }
+  };
+
+  // Close the modal with final state
+  const handleFinalClose = () => {
+    if (step === 'success') {
+      onClose();
+    } else {
+      // If user wants to cancel the process
+      onClose();
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogTitle>
-          {step === ConnectStep.ENTER_NPUB ? "Connect with Nostr" : "Enter Verification PIN"}
-        </DialogTitle>
-        <DialogDescription>
-          {step === ConnectStep.ENTER_NPUB 
-            ? "Enter your Nostr public key (npub) to connect your account" 
-            : "Enter the 4-digit PIN sent to your Nostr account"}
-        </DialogDescription>
-        
+        <DialogHeader>
+          <DialogTitle className="text-center text-xl font-bold mb-2">
+            {step === 'npub' && "Connect with Nostr"}
+            {step === 'pin' && "Enter Verification PIN"}
+            {step === 'success' && "Successfully Connected"}
+            {step === 'error' && "Connection Error"}
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            {step === 'npub' && "Enter your Nostr npub to connect"}
+            {step === 'pin' && "Check your Nostr client for a DM with a 4-digit PIN"}
+            {step === 'success' && "Your Nostr account is now connected"}
+            {step === 'error' && "There was a problem connecting to your Nostr account"}
+          </DialogDescription>
+        </DialogHeader>
+
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-md text-sm">
-            {error}
+          <div className="bg-red-50 text-red-600 p-3 rounded-md flex items-center gap-2 mb-4">
+            <AlertCircle className="h-5 w-5" />
+            <p>{error}</p>
           </div>
         )}
-        
-        {step === ConnectStep.ENTER_NPUB ? (
-          <form onSubmit={handleNpubSubmit} className="space-y-4">
+
+        {step === 'npub' && (
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label htmlFor="npub">Your Nostr Public Key (npub)</Label>
               <Input
+                id="npub"
                 placeholder="npub1..."
                 value={npub}
                 onChange={(e) => setNpub(e.target.value)}
-                className="w-full"
-                disabled={isLoading}
               />
-              <p className="text-xs text-gray-500">
-                Your Nostr public key (npub) can be found in your Nostr client settings
-              </p>
             </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Continue"}
-              </Button>
-            </div>
-          </form>
-        ) : (
-          <form onSubmit={handlePinSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                placeholder="4-digit PIN"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                className="w-full text-center text-2xl letter-spacing-wide"
-                maxLength={4}
-                disabled={isLoading}
-              />
-              <p className="text-xs text-gray-500">
-                Check your Nostr client for a direct message from High Fives containing your PIN
-              </p>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Verifying..." : "Verify PIN"}
-              </Button>
-            </div>
-          </form>
+            <Button 
+              onClick={handleNpubSubmit} 
+              className="w-full" 
+              disabled={loading || !npub.startsWith('npub1')}
+            >
+              {loading ? "Sending Verification..." : "Connect"}
+            </Button>
+          </div>
         )}
+
+        {step === 'pin' && (
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="pin">Enter the 4-digit PIN sent to your Nostr client</Label>
+              <div className="flex justify-center py-4">
+                <InputOTP 
+                  maxLength={4} 
+                  value={pin} 
+                  onChange={setPin}
+                  render={({ slots }) => (
+                    <InputOTPGroup>
+                      {slots.map((slot, index) => (
+                        <InputOTPSlot key={index} {...slot} />
+                      ))}
+                    </InputOTPGroup>
+                  )}
+                />
+              </div>
+            </div>
+            <Button 
+              onClick={handlePinVerify} 
+              className="w-full" 
+              disabled={pin.length !== 4}
+            >
+              Verify PIN
+            </Button>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col items-center justify-center py-4">
+              <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+              <p className="text-center">Your Nostr key is now connected to High Fives!</p>
+            </div>
+            <Button 
+              onClick={handleFinalClose} 
+              className="w-full bg-green-500 hover:bg-green-600"
+            >
+              Continue
+            </Button>
+          </div>
+        )}
+
+        {step === 'error' && (
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col items-center justify-center py-4">
+              <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+              <p className="text-center">{error || "There was an error connecting your Nostr account"}</p>
+            </div>
+            <Button 
+              onClick={() => setStep('npub')} 
+              className="w-full"
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
+
+        <DialogFooter className="flex flex-col gap-2 sm:gap-0">
+          {step !== 'success' && step !== 'error' && (
+            <Button 
+              variant="outline" 
+              onClick={onClose}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

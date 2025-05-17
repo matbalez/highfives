@@ -1,20 +1,17 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import highFivesLogo from "../assets/hf square.png";
 import { Button } from "@/components/ui/button";
 import NostrConnectModal from "./NostrConnectModal";
-import { useStore } from "@/lib/store.ts";
+import { useStore } from "@/lib/store";
 
 export default function Header() {
   const { nostrUser, setNostrUser, isNostrConnected } = useStore();
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Format npub for display (truncate middle for better UI)
-  const formatNpub = (npub: string) => {
-    if (!npub) return "";
-    return `${npub.substring(0, 8)}...${npub.substring(npub.length - 4)}`;
+  const handleConnectClick = () => {
+    setIsModalOpen(true);
   };
 
-  // Handle disconnect from Nostr
   const handleDisconnect = () => {
     setNostrUser(null);
   };
@@ -28,14 +25,14 @@ export default function Header() {
         
         {isNostrConnected ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
-              Connected: {formatNpub(nostrUser || "")}
-            </span>
+            <div className="text-sm font-medium truncate max-w-[150px]">
+              {nostrUser?.substring(0, 8)}...
+            </div>
             <Button 
               variant="outline" 
               size="sm"
+              className="font-futura font-bold text-black bg-white border-2 border-primary hover:bg-white/90"
               onClick={handleDisconnect}
-              className="font-futura text-red-600 border-red-200 hover:bg-red-50"
             >
               Disconnect
             </Button>
@@ -44,7 +41,7 @@ export default function Header() {
           <Button 
             variant="outline" 
             className="font-futura font-bold text-black bg-white border-2 border-primary hover:bg-white/90"
-            onClick={() => setIsConnectModalOpen(true)}
+            onClick={handleConnectClick}
           >
             Connect to Nostr
           </Button>
@@ -52,12 +49,8 @@ export default function Header() {
       </div>
 
       <NostrConnectModal 
-        isOpen={isConnectModalOpen}
-        onClose={() => setIsConnectModalOpen(false)}
-        onConnected={(npub) => {
-          setNostrUser(npub);
-          setIsConnectModalOpen(false);
-        }}
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
       />
     </header>
   );
