@@ -20,6 +20,7 @@ export interface IStorage {
   getHighFive(id: number): Promise<HighFive | undefined>;
   getAllHighFives(): Promise<HighFive[]>;
   updateHighFiveNostrEventId(id: number, nostrEventId: string): Promise<HighFive | undefined>;
+  updateHighFiveQRCodePath(id: number, qrCodePath: string): Promise<HighFive | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -81,6 +82,17 @@ export class MemStorage implements IStorage {
     const highFive = this.highFives.get(id);
     if (highFive) {
       highFive.nostrEventId = nostrEventId;
+      this.highFives.set(id, highFive);
+      return highFive;
+    }
+    return undefined;
+  }
+  
+  async updateHighFiveQRCodePath(id: number, qrCodePath: string): Promise<HighFive | undefined> {
+    const highFive = this.highFives.get(id);
+    if (highFive) {
+      // @ts-ignore - Add qrCodePath property even if it's not in the original type
+      highFive.qrCodePath = qrCodePath;
       this.highFives.set(id, highFive);
       return highFive;
     }

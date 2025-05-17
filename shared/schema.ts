@@ -23,6 +23,7 @@ export const highFives = pgTable("high_fives", {
   nostrEventId: text("nostr_event_id"), // Event ID from Nostr publication
   profileName: text("profile_name"), // Profile name for npub recipients
   senderProfileName: text("sender_profile_name"), // Profile name for npub senders
+  qrCodePath: text("qr_code_path"), // Path to the QR code image file
 });
 
 export const insertHighFiveSchema = createInsertSchema(highFives).omit({

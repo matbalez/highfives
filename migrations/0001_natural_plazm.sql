@@ -1,0 +1,1 @@
+ALTER TABLE "high_fives" ADD COLUMN "qr_code_path" text;

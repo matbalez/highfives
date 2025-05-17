@@ -60,4 +60,14 @@ export class PgStorage implements IStorage {
     
     return result[0];
   }
+  
+  async updateHighFiveQRCodePath(id: number, qrCodePath: string): Promise<HighFive | undefined> {
+    const result = await db
+      .update(highFives)
+      .set({ qrCodePath })
+      .where(eq(highFives.id, id))
+      .returning();
+    
+    return result[0];
+  }
 }
