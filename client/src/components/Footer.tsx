@@ -34,7 +34,7 @@ export default function Footer() {
         
         {/* Disclaimer text */}
         <div className="mt-8 text-gray-500 text-sm font-light">
-          Early prototype. Use with caution.
+          Status: alpha testing. Use with caution.
         </div>
       </div>
     </footer>
