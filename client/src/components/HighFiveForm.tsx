@@ -79,13 +79,33 @@ export default function HighFiveForm() {
       const response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(btag)}`);
       
       if (response.data && response.data.paymentInstructions) {
-        // Store the high five details and show payment modal
+        // Create and post the High Five to Nostr immediately
+        const lightningInvoice = response.data.paymentInstructions;
+        
+        // Send to API with lightning invoice and get the response including Nostr event ID
+        const result = await apiRequest(
+          'POST',
+          '/api/high-fives', 
+          {
+            recipient: values.recipient,
+            reason: enhancedReason,
+            sender: values.sender || undefined,
+            profileName: response.data.profileName, // Include profile name if available
+            lightningInvoice: lightningInvoice // Pass lightning invoice separately
+          }
+        );
+        
+        // Invalidate the high fives query cache
+        queryClient.invalidateQueries({ queryKey: ['/api/high-fives'] });
+        
+        // Store the high five details with Nostr event ID for later use
         setPendingHighFive({
           recipient: values.recipient,
           reason: enhancedReason,
           sender: values.sender || undefined,
-          // If this is an npub with a profile name, include it
-          profileName: response.data.profileName
+          profileName: response.data.profileName,
+          nostrEventId: result.nostrEventId,
+          senderProfileName: result.senderProfileName
         });
         
         // Open payment modal
@@ -129,42 +149,24 @@ export default function HighFiveForm() {
     if (!pendingHighFive) return;
     
     try {
-      // Use the original reason, we'll pass the lightning invoice separately
-      const enhancedReason = pendingHighFive.reason;
+      // High Five has already been created and posted to Nostr
+      // All we need to do is close the payment modal and show the success screen
       
-      // Send to API with lightning invoice and get the response including Nostr event ID
-      const result = await apiRequest(
-        'POST',
-        '/api/high-fives', 
-        {
-          recipient: pendingHighFive.recipient,
-          reason: enhancedReason,
-          sender: pendingHighFive.sender,
-          profileName: pendingHighFive.profileName, // Include profile name if available
-          lightningInvoice: lightningInvoice // Pass lightning invoice separately
-        }
-      );
-
-      // Invalidate the high fives query cache
-      queryClient.invalidateQueries({ queryKey: ['/api/high-fives'] });
-
       // Close payment modal
       setPaymentModalOpen(false);
       
-      // Show success screen with details, including Nostr event ID and sender profile name if available
+      // Show success screen with details that were already stored
       setSuccessDetails({
-        ...pendingHighFive,
-        nostrEventId: result.nostrEventId,
-        senderProfileName: result.senderProfileName
+        ...pendingHighFive
       });
       
       // Clear pending high five
       setPendingHighFive(null);
     } catch (error) {
-      console.error("Error submitting high five:", error);
+      console.error("Error displaying success screen:", error);
       toast({
         title: "Error",
-        description: "Failed to send your High Five. Please try again.",
+        description: "There was a problem completing your High Five. Please try again.",
         variant: "destructive",
       });
       
