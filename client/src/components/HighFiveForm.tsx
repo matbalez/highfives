@@ -19,6 +19,13 @@ import { HighFiveDetails } from "../lib/types";
 import SuccessScreen from "./SuccessScreen";
 import PaymentModal from "./PaymentModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   recipient: z.string().min(1, {
@@ -225,60 +232,19 @@ export default function HighFiveForm() {
                 <FormItem className="space-y-2">
                   <div className="flex justify-between items-center">
                     <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
-                    <div className="flex items-center text-xs">
-                      <span className="mr-1 text-gray-500 font-normal">Use:</span>
+                    <div className="flex items-center text-xs space-x-2">
+                      <span className="text-gray-500 font-normal">Use:</span>
                       
-                      {/* Mode switcher buttons */}
-                      <div className="flex items-center">
-                        {/* Button for btag/npub */}
-                        {inputMode === 'btag' ? (
-                          <button 
-                            type="button"
-                            onClick={() => setInputMode('npub')}
-                            className="text-primary hover:text-primary/80 font-medium"
-                          >
-                            npub
-                          </button>
-                        ) : inputMode === 'npub' ? (
-                          <button 
-                            type="button"
-                            onClick={() => setInputMode('btag')}
-                            className="text-primary hover:text-primary/80 font-medium"
-                          >
-                            ₿tag
-                          </button>
-                        ) : (
-                          <button 
-                            type="button"
-                            onClick={() => setInputMode('btag')}
-                            className="text-primary hover:text-primary/80 font-medium"
-                          >
-                            ₿tag
-                          </button>
-                        )}
-                        
-                        {/* Separator */}
-                        <span className="mx-1 text-gray-500 font-normal">|</span>
-                        
-                        {/* Button for Lightning Address */}
-                        {inputMode === 'lightning' ? (
-                          <button 
-                            type="button"
-                            onClick={() => setInputMode('btag')}
-                            className="text-primary hover:text-primary/80 font-medium"
-                          >
-                            ₿tag
-                          </button>
-                        ) : (
-                          <button 
-                            type="button"
-                            onClick={() => setInputMode('lightning')}
-                            className="text-primary hover:text-primary/80 font-medium"
-                          >
-                            LN Address
-                          </button>
-                        )}
-                      </div>
+                      {/* Simple dropdown instead */}
+                      <select
+                        value={inputMode}
+                        onChange={(e) => setInputMode(e.target.value as 'btag' | 'npub' | 'lightning')}
+                        className="text-xs h-7 px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[120px]"
+                      >
+                        <option value="btag">₿tag</option>
+                        <option value="npub">npub</option>
+                        <option value="lightning">LN Address</option>
+                      </select>
                     </div>
                   </div>
                   <FormControl>
