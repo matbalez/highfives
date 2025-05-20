@@ -1,92 +1,113 @@
 // WebSocket connection management
 let socket: WebSocket | null = null;
+let isConnecting = false;
+let reconnectTimer: number | null = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 3;
 
 // Setup the WebSocket connection with proper error handling
 export function setupWebSocket(): WebSocket | null {
+  // Don't try to connect if we're already connecting or have a connection
+  if (isConnecting) {
+    return null;
+  }
+  
   if (socket && socket.readyState === WebSocket.OPEN) {
-    console.log('WebSocket already connected');
     return socket;
   }
   
+  // Clear any existing socket that might be in a closing state
+  if (socket) {
+    try {
+      socket.close();
+    } catch (e) {
+      // Ignore errors on cleanup
+    }
+    socket = null;
+  }
+  
   try {
-    // Fixed approach: Only create WebSocket if we have a valid host
+    isConnecting = true;
+    
+    // Only create WebSocket if we have a valid host
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
     
-    // Skip WebSocket setup if host is invalid or we're in a development environment with HMR issues
+    // Skip WebSocket setup in certain environments
     if (!host || host.includes('localhost:undefined')) {
-      console.log('Skipping WebSocket setup due to invalid host or development environment');
+      isConnecting = false;
       return null;
     }
     
     const wsUrl = `${protocol}//${host}/ws`;
-    console.log(`Connecting to WebSocket at ${wsUrl}`);
     
     // Create a new WebSocket connection
     socket = new WebSocket(wsUrl);
     
-    // Setup event handlers
+    // Connection opened
     socket.onopen = () => {
-      console.log('WebSocket connection established');
-    };
-    
-    socket.onmessage = (event) => {
-      console.log('WebSocket message received:', event.data);
-      // Handle incoming messages here (e.g., parse JSON data)
-      try {
-        const data = JSON.parse(event.data);
-        // Process data and dispatch actions as needed
-        handleWebSocketMessage(data);
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+      isConnecting = false;
+      reconnectAttempts = 0;
+      
+      // Clear any pending reconnect timers
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
       }
     };
     
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      socket = null;
+    // Handle messages
+    socket.onmessage = (event) => {
+      // Handle incoming messages here (e.g., parse JSON data)
+      try {
+        const data = JSON.parse(event.data);
+        handleWebSocketMessage(data);
+      } catch (err) {
+        // Silently handle parsing errors
+      }
     };
     
-    // Track reconnection attempts at module level to prevent multiple reconnection loops
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 3;
+    // Handle errors
+    socket.onerror = () => {
+      // Let onclose handle the cleanup
+    };
     
+    // Connection closed
     socket.onclose = (event) => {
-      console.log(`WebSocket closed with code ${event.code}: ${event.reason}`);
+      const wasConnecting = isConnecting;
+      isConnecting = false;
       
-      // Keep socket object null to prevent multiple reconnection attempts
-      const currentSocket = socket;
+      // Set socket to null to allow reconnection attempts
       socket = null;
       
-      // Only attempt reconnection if this is still the current socket
-      // and if it was a normal closure or network issue
-      if (
-        currentSocket && 
-        (event.code === 1000 || event.code === 1001 || event.code === 1006) &&
-        reconnectAttempts < MAX_RECONNECT_ATTEMPTS
-      ) {
+      // Only attempt to reconnect if we're not in HMR and haven't exceeded attempts
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        // Increment attempt counter
         reconnectAttempts++;
-        console.log(`Attempting to reconnect WebSocket (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
         
-        // Use a slightly longer delay between reconnection attempts
-        setTimeout(() => {
-          // Only try to reconnect if we still don't have a socket
-          if (!socket) {
-            setupWebSocket();
-          }
-        }, 5000); // 5 second delay
-      } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-        console.log('Max reconnection attempts reached. WebSocket reconnection stopped.');
-        // Reset reconnect attempts after a longer cool-down period
-        setTimeout(() => {
-          reconnectAttempts = 0;
-        }, 30000); // 30 second cool-down
+        // Clear any previous reconnect timer
+        if (reconnectTimer !== null) {
+          window.clearTimeout(reconnectTimer);
+        }
+        
+        // Use exponential backoff for reconnection
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 10000);
+        
+        // Set a timer to reconnect
+        reconnectTimer = window.setTimeout(() => {
+          reconnectTimer = null;
+          setupWebSocket();
+        }, delay);
+      } else if (wasConnecting) {
+        // If this was a failed initial connection attempt,
+        // reset the counter to allow future attempts
+        reconnectAttempts = 0;
       }
     };
     
     return socket;
   } catch (err) {
-    console.error('Failed to setup WebSocket connection:', err);
+    isConnecting = false;
     return null;
   }
 }

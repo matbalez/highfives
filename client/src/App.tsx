@@ -23,16 +23,14 @@ function Router() {
 function App() {
   // Initialize WebSocket connection when the app loads
   useEffect(() => {
-    // Only setup WebSocket in browser environment
+    // Only setup WebSocket in browser environment and not during HMR
     if (typeof window !== 'undefined') {
       // Setup WebSocket connection with proper error handling
       const ws = setupWebSocket();
       
       // Clean up WebSocket connection when component unmounts
       return () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
+        closeWebSocket(); // Use our dedicated cleanup function
       };
     }
   }, []);
