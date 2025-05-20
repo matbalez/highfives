@@ -36,8 +36,8 @@ export default function HighFiveForm() {
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingHighFive, setPendingHighFive] = useState<HighFiveDetails | null>(null);
-  // State to track input mode (false = easy address, true = npub)
-  const [isNpubMode, setIsNpubMode] = useState(false);
+  // State to track input mode ('btag', 'npub', or 'lightning')
+  const [inputMode, setInputMode] = useState<'btag' | 'npub' | 'lightning'>('btag');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,7 +62,7 @@ export default function HighFiveForm() {
   // Clear the recipient field when switching between modes
   useEffect(() => {
     form.setValue("recipient", "");
-  }, [isNpubMode, form]);
+  }, [inputMode, form]);
 
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
@@ -74,9 +74,17 @@ export default function HighFiveForm() {
     setIsVerifyingPayment(true);
     
     try {
-      // Verify payment instructions exist
-      const btag = values.recipient;
-      const response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(btag)}`);
+      let response;
+      const recipient = values.recipient;
+      
+      if (inputMode === 'lightning') {
+        // For Lightning Address, get invoice directly
+        response = await axios.get(`/api/lightning-invoice?address=${encodeURIComponent(recipient)}`);
+      } else {
+        // For ₿tag or npub, look up payment instructions
+        const paramName = inputMode === 'btag' ? 'btag' : 'npub';
+        response = await axios.get(`/api/payment-instructions?${paramName}=${encodeURIComponent(recipient)}`);
+      }
       
       if (response.data && response.data.paymentInstructions) {
         // Create and post the High Five to Nostr immediately
@@ -91,7 +99,8 @@ export default function HighFiveForm() {
             reason: enhancedReason,
             sender: values.sender || undefined,
             profileName: response.data.profileName, // Include profile name if available
-            lightningInvoice: lightningInvoice // Pass lightning invoice separately
+            lightningInvoice: lightningInvoice, // Pass lightning invoice separately
+            recipientType: inputMode // Indicate the type of recipient
           }
         );
         
@@ -128,9 +137,17 @@ export default function HighFiveForm() {
           variant: "destructive",
         });
       } else if (isNotFoundError) {
+        let message = "No payment instructions found for this recipient. Please verify the address is correct.";
+        
+        if (inputMode === 'lightning') {
+          message = "Unable to generate an invoice for this Lightning Address. Please verify it is correct.";
+        } else if (inputMode === 'npub') {
+          message = "This Nostr profile doesn't have a Lightning Address configured. Please try a different recipient.";
+        }
+        
         toast({
-          title: "Payment Instructions Not Found",
-          description: "No payment instructions found for this recipient. Please verify the recipient address is correct.",
+          title: "Payment Lookup Error",
+          description: message,
           variant: "destructive",
         });
       } else {
@@ -208,22 +225,48 @@ export default function HighFiveForm() {
                 <FormItem className="space-y-2">
                   <div className="flex justify-between items-center">
                     <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
-                    <button 
-                      type="button"
-                      onClick={() => setIsNpubMode(!isNpubMode)}
-                      className="text-xs text-primary hover:text-primary/80 font-medium"
-                    >
-                      {isNpubMode ? "Use ₿tag" : "Use npub"}
-                    </button>
+                    <div className="flex space-x-3">
+                      {inputMode !== 'btag' && (
+                        <button 
+                          type="button"
+                          onClick={() => setInputMode('btag')}
+                          className="text-xs text-primary hover:text-primary/80 font-medium"
+                        >
+                          Use ₿tag
+                        </button>
+                      )}
+                      {inputMode !== 'npub' && (
+                        <button 
+                          type="button"
+                          onClick={() => setInputMode('npub')}
+                          className="text-xs text-primary hover:text-primary/80 font-medium"
+                        >
+                          Use npub
+                        </button>
+                      )}
+                      {inputMode !== 'lightning' && (
+                        <button 
+                          type="button"
+                          onClick={() => setInputMode('lightning')}
+                          className="text-xs text-primary hover:text-primary/80 font-medium"
+                        >
+                          Use LN Address
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <FormControl>
                     <div className="relative">
-                      {!isNpubMode && (
+                      {inputMode === 'btag' && (
                         <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
                       )}
                       <Input
-                        placeholder={isNpubMode ? "Enter an npub" : "Enter a ₿tag"}
-                        className={`p-3 ${isNpubMode ? 'pl-3' : 'pl-8'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
+                        placeholder={
+                          inputMode === 'btag' ? "Enter a ₿tag" : 
+                          inputMode === 'npub' ? "Enter an npub" : 
+                          "Enter a Lightning Address"
+                        }
+                        className={`p-3 ${inputMode === 'btag' ? 'pl-8' : 'pl-3'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
                         {...field}
                       />
                     </div>

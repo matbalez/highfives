@@ -139,6 +139,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint for generating a Lightning invoice directly from a Lightning Address
+  app.get("/api/lightning-invoice", async (req, res) => {
+    try {
+      const { address } = req.query;
+      
+      if (!address || typeof address !== 'string') {
+        return res.status(400).json({ 
+          message: "Missing or invalid 'address' parameter",
+          details: "Please provide a valid Lightning Address in the format user@domain.com" 
+        });
+      }
+      
+      if (!address.includes('@')) {
+        return res.status(400).json({
+          message: "Invalid Lightning Address format",
+          details: "Lightning Address must be in the format user@domain.com"
+        });
+      }
+      
+      console.log(`Generating invoice for lightning address: ${address}`);
+      
+      // Generate an actual Lightning invoice (payment request)
+      const amount = 21000; // 21,000 sats for the High Five
+      const comment = "High Five Payment";
+      const invoice = await getInvoiceFromLightningAddress(address, amount, comment);
+      
+      if (!invoice) {
+        console.log(`Failed to generate invoice for Lightning Address: ${address}`);
+        return res.status(404).json({
+          message: "Payment generation failed",
+          details: "Could not generate a Lightning invoice for this address"
+        });
+      }
+      
+      console.log(`Successfully generated invoice for ${address}`);
+      
+      return res.status(200).json({
+        paymentInstructions: invoice,
+        paymentType: 'bolt11',
+        lightningAddress: address
+      });
+    } catch (error) {
+      console.error("Error generating Lightning invoice:", error);
+      return res.status(500).json({ 
+        message: "Internal server error",
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   // Endpoint for looking up payment instructions from btag or npub
   app.get("/api/payment-instructions", async (req, res) => {
     try {
