@@ -255,7 +255,7 @@ export default function HighFiveForm() {
                       <Input
                         placeholder={
                           inputMode === 'btag' ? "LN Address or BIP-353 address" : 
-                          "npub"
+                          "Enter an npub..."
                         }
                         className={`p-3 ${inputMode === 'btag' ? 'pl-8' : 'pl-3'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
                         {...field}
