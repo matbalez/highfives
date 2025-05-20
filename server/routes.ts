@@ -192,26 +192,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint for looking up payment instructions from btag or npub
   app.get("/api/payment-instructions", async (req, res) => {
     try {
-      const { btag } = req.query;
+      // Check for either btag or npub parameter
+      const btag = req.query.btag as string | undefined;
+      const npub = req.query.npub as string | undefined;
       
-      if (!btag || typeof btag !== 'string') {
+      // Use either the btag or npub parameter
+      let recipient = btag || npub;
+      
+      if (!recipient || typeof recipient !== 'string') {
         return res.status(400).json({ 
-          message: "Missing or invalid 'btag' parameter",
-          details: "Please provide a valid btag in the format user@domain.com or a Nostr npub" 
+          message: "Missing or invalid recipient parameter",
+          details: "Please provide either a valid btag in the format user@domain.com or a Nostr npub" 
         });
       }
       
       // Process different recipient format types
-      if (btag.startsWith('npub')) {
+      if (recipient.startsWith('npub')) {
         // Handle Nostr npub
-        console.log(`Looking up payment instructions for npub: ${btag}`);
+        console.log(`Looking up payment instructions for npub: ${recipient}`);
         
         try {
           // Get Lightning Address from npub
-          const lightningAddress = await getLightningAddressFromNpub(btag);
+          const lightningAddress = await getLightningAddressFromNpub(recipient);
           
           if (!lightningAddress) {
-            console.log(`No Lightning Address found for npub: ${btag}`);
+            console.log(`No Lightning Address found for npub: ${recipient}`);
             return res.status(404).json({
               message: "Lightning Address not found",
               details: "Could not find a Lightning Address for this Nostr profile"
@@ -221,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Found Lightning Address for npub: ${lightningAddress}`);
           
           // Also get profile name if available
-          const profileName = await getProfileNameFromNpub(btag);
+          const profileName = await getProfileNameFromNpub(recipient);
           
           // Generate an actual Lightning invoice (payment request)
           const amount = 21000; // 21,000 sats for the High Five
@@ -252,10 +257,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: error instanceof Error ? error.message : "Unknown error processing npub"
           });
         }
-      } else if (btag.includes('@')) {
+      } else if (recipient.includes('@')) {
         // Standard btag lookup (email format)
-        console.log(`Looking up payment instructions for btag: ${btag}`);
-        const paymentInstructions = await lookupPaymentInstructions(btag);
+        console.log(`Looking up payment instructions for btag: ${recipient}`);
+        const paymentInstructions = await lookupPaymentInstructions(recipient);
         
         if (!paymentInstructions) {
           return res.status(404).json({ 
@@ -265,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         return res.status(200).json({ 
-          btag,
+          btag: recipient, // Use the recipient variable which contains either btag or npub
           paymentInstructions,
           paymentType: 'lno'
         });
