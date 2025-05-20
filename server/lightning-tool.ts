@@ -1,4 +1,5 @@
 import { LightningAddress } from '@getalby/lightning-tools';
+import axios from 'axios';
 
 /**
  * Fetches payment data from a Lightning Address and generates an invoice
@@ -9,7 +10,7 @@ import { LightningAddress } from '@getalby/lightning-tools';
  */
 export async function getInvoiceFromLightningAddress(
   lightningAddress: string, 
-  amount: number = 21000, // Changed to 21,000 sats
+  amount: number = 21000, // 21,000 sats
   comment: string = 'High Five Payment'
 ): Promise<string | null> {
   try {
@@ -29,16 +30,49 @@ export async function getInvoiceFromLightningAddress(
     
     await Promise.race([fetchPromise, timeoutPromise]);
     
-    if (!ln.lnurlpData) {
+    if (!ln.lnurlpData || !ln.lnurlpData.callback) {
       console.error('No LNURL pay data found for lightning address');
       return null;
     }
     
-    // Generate an invoice with a 72-hour expiry (259200 seconds)
+    // Try to create an invoice with extended expiry by calling the endpoint directly
+    try {
+      // Build the callback URL with parameters including extended expiry
+      const callbackBase = ln.lnurlpData.callback;
+      const callbackUrl = new URL(callbackBase);
+      
+      // Add the standard parameters
+      callbackUrl.searchParams.append('amount', (amount * 1000).toString()); // Convert sats to millisats
+      if (comment) {
+        callbackUrl.searchParams.append('comment', comment);
+      }
+      
+      // Add custom parameter for expiry if supported by the service
+      // Many providers use different parameter names for expiry, trying common ones
+      callbackUrl.searchParams.append('expiry', '259200'); // 72 hours in seconds
+      callbackUrl.searchParams.append('expires', '259200'); // Alternative parameter name
+      callbackUrl.searchParams.append('expirySeconds', '259200'); // Another alternative
+      
+      console.log(`Making direct LNURL request with extended expiry: ${callbackUrl.toString()}`);
+      
+      const response = await axios.get(callbackUrl.toString());
+      
+      if (response.data && response.data.pr) {
+        console.log('Successfully generated invoice with extended expiry');
+        return response.data.pr;
+      } else {
+        console.error('Invalid LNURL response format', response.data);
+        throw new Error('Invalid LNURL response');
+      }
+    } catch (error) {
+      console.warn('Error generating invoice with extended expiry:', error);
+      console.log('Falling back to standard invoice generation');
+    }
+    
+    // Fall back to standard invoice generation if the direct method fails
     const invoice = await ln.requestInvoice({
       satoshi: amount,
-      comment: comment,
-      expiry: 259200, // 72 hours in seconds
+      comment: comment
     });
     
     if (!invoice || !invoice.paymentRequest) {
