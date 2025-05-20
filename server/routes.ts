@@ -47,7 +47,7 @@ async function getCombinedPaymentInstructions(address: string): Promise<{
       };
     }
   } catch (error) {
-    console.log(`DNS lookup failed for ${address}: ${error.message}`);
+    console.log(`DNS lookup failed for ${address}: ${error instanceof Error ? error.message : String(error)}`);
     // If DNS lookup fails, continue to try Lightning Address
   }
   
@@ -62,7 +62,7 @@ async function getCombinedPaymentInstructions(address: string): Promise<{
       };
     }
   } catch (error) {
-    console.log(`Lightning Address invoice generation failed for ${address}: ${error.message}`);
+    console.log(`Lightning Address invoice generation failed for ${address}: ${error instanceof Error ? error.message : String(error)}`);
   }
   
   // Both methods failed
@@ -330,6 +330,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Internal server error",
         details: error instanceof Error ? error.message : String(error)
       });
+    }
+  });
+
+  // Combined endpoint that tries both btag and Lightning Address methods
+  app.get("/api/combined-payment-instructions", async (req, res) => {
+    const { address } = req.query;
+    
+    if (!address) {
+      return res.status(400).json({ message: "Address parameter is required" });
+    }
+    
+    try {
+      const result = await getCombinedPaymentInstructions(address as string);
+      
+      if (result && result.paymentInstructions) {
+        res.status(200).json(result);
+      } else {
+        res.status(404).json({ 
+          message: "Payment instructions not found via either DNS lookup or Lightning Address" 
+        });
+      }
+    } catch (error) {
+      console.error('Error in combined payment instructions lookup:', error);
+      res.status(500).json({ message: "Error processing payment instructions" });
     }
   });
 
