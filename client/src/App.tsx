@@ -21,21 +21,17 @@ function Router() {
 }
 
 function App() {
-  // Initialize WebSocket connection when the app loads
-  useEffect(() => {
-    // Only setup WebSocket in browser environment
-    if (typeof window !== 'undefined') {
-      // Setup WebSocket connection with proper error handling
-      const ws = setupWebSocket();
-      
-      // Return cleanup function
-      return () => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
-      };
-    }
-  }, []);
+  // WebSocket functionality temporarily disabled
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined') {
+  //     const ws = setupWebSocket();
+  //     return () => {
+  //       if (ws && ws.readyState === WebSocket.OPEN) {
+  //         ws.close();
+  //       }
+  //     };
+  //   }
+  // }, []);
   
   return (
     <QueryClientProvider client={queryClient}>
