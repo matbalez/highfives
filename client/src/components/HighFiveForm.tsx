@@ -84,7 +84,10 @@ export default function HighFiveForm() {
       let response;
       const recipient = values.recipient;
       
-      if (inputMode === 'lightning') {
+      // Check if the recipient format is a Lightning Address (contains @ but doesn't start with 'npub')
+      const isLightningAddress = recipient.includes('@') && !recipient.startsWith('npub');
+      
+      if (inputMode === 'lightning' || isLightningAddress) {
         // For Lightning Address, get invoice directly
         response = await axios.get(`/api/lightning-invoice?address=${encodeURIComponent(recipient)}`);
       } else {
