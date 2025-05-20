@@ -48,12 +48,9 @@ export default function PaymentModal({
       if (recipient.startsWith('npub')) {
         // Handle Nostr npub
         endpoint = `/api/payment-instructions?npub=${encodeURIComponent(recipient)}`;
-      } else if (highFiveDetails.recipientType === 'lightning') {
-        // Handle Lightning Address
-        endpoint = `/api/lightning-invoice?address=${encodeURIComponent(recipient)}`;
       } else {
-        // Handle btag (default)
-        endpoint = `/api/payment-instructions?btag=${encodeURIComponent(recipient)}`;
+        // Handle btag/lightning with combined endpoint
+        endpoint = `/api/combined-payment-instructions?address=${encodeURIComponent(recipient)}`;
       }
         
       axios.get(endpoint)
