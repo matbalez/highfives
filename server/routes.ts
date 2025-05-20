@@ -26,6 +26,49 @@ if (!fs.existsSync(qrCodesDir)) {
 
 import { sendNostrDM } from './nostr-dm';
 
+/**
+ * Combined endpoint that tries both DNS lookup and Lightning invoice generation
+ * First attempts DNS lookup for BIP-353 ₿tag
+ * If that fails, tries generating invoice directly as Lightning Address
+ */
+async function getCombinedPaymentInstructions(address: string): Promise<{
+  paymentInstructions: string;
+  paymentType?: string;
+  lightningAddress?: string;
+} | null> {
+  // First try as a BIP-353 tag
+  try {
+    const paymentInstructions = await lookupPaymentInstructions(address);
+    if (paymentInstructions) {
+      return {
+        paymentInstructions,
+        paymentType: 'bolt11',
+        lightningAddress: address
+      };
+    }
+  } catch (error) {
+    console.log(`DNS lookup failed for ${address}: ${error.message}`);
+    // If DNS lookup fails, continue to try Lightning Address
+  }
+  
+  // If DNS lookup fails, try as a Lightning Address
+  try {
+    const invoice = await getInvoiceFromLightningAddress(address, 21000);
+    if (invoice) {
+      return {
+        paymentInstructions: invoice,
+        paymentType: 'bolt11',
+        lightningAddress: address
+      };
+    }
+  } catch (error) {
+    console.log(`Lightning Address invoice generation failed for ${address}: ${error.message}`);
+  }
+  
+  // Both methods failed
+  return null;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes for high fives
   app.post("/api/high-fives", async (req, res) => {

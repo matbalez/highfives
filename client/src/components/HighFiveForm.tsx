@@ -43,8 +43,8 @@ export default function HighFiveForm() {
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [pendingHighFive, setPendingHighFive] = useState<HighFiveDetails | null>(null);
-  // State to track input mode ('btag', 'npub', or 'lightning')
-  const [inputMode, setInputMode] = useState<'btag' | 'npub' | 'lightning'>('btag');
+  // State to track input mode ('btag' or 'npub')
+  const [inputMode, setInputMode] = useState<'btag' | 'npub'>('btag');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,15 +85,12 @@ export default function HighFiveForm() {
       const recipient = values.recipient;
       
       // Each address type should use its specified endpoint
-      if (inputMode === 'lightning') {
-        // For Lightning Address, get invoice directly
-        response = await axios.get(`/api/lightning-invoice?address=${encodeURIComponent(recipient)}`);
-      } else if (inputMode === 'npub') {
+      if (inputMode === 'npub') {
         // For npub, look up payment instructions via npub endpoint
         response = await axios.get(`/api/payment-instructions?npub=${encodeURIComponent(recipient)}`);
       } else {
-        // For ₿tag, use the btag endpoint for DNS lookup
-        response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(recipient)}`);
+        // For btag/lightning, use a combined endpoint that will try both methods
+        response = await axios.get(`/api/combined-payment-instructions?address=${encodeURIComponent(recipient)}`);
       }
       
       if (response.data && response.data.paymentInstructions) {
@@ -150,10 +147,10 @@ export default function HighFiveForm() {
       } else if (isNotFoundError) {
         let message = "No payment instructions found for this recipient. Please verify the address is correct.";
         
-        if (inputMode === 'lightning') {
-          message = "Unable to generate an invoice for this Lightning Address. Please verify it is correct.";
-        } else if (inputMode === 'npub') {
+        if (inputMode === 'npub') {
           message = "This Nostr profile doesn't have a Lightning Address configured. Please try a different recipient.";
+        } else {
+          message = "Neither DNS lookup nor Lightning invoice generation worked for this address. Please verify it is correct.";
         }
         
         toast({
@@ -242,12 +239,11 @@ export default function HighFiveForm() {
                       {/* Simple dropdown instead */}
                       <select
                         value={inputMode}
-                        onChange={(e) => setInputMode(e.target.value as 'btag' | 'npub' | 'lightning')}
+                        onChange={(e) => setInputMode(e.target.value as 'btag' | 'npub')}
                         className="text-xs h-7 px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[120px]"
                       >
-                        <option value="btag">₿tag</option>
+                        <option value="btag">Lightning/₿tag</option>
                         <option value="npub">npub</option>
-                        <option value="lightning">LN Address</option>
                       </select>
                     </div>
                   </div>
@@ -258,9 +254,8 @@ export default function HighFiveForm() {
                       )}
                       <Input
                         placeholder={
-                          inputMode === 'btag' ? "Enter a ₿tag" : 
-                          inputMode === 'npub' ? "Enter an npub" : 
-                          "Enter a Lightning Address"
+                          inputMode === 'btag' ? "LN Address or BIP-353 Address" : 
+                          "Enter an npub"
                         }
                         className={`p-3 ${inputMode === 'btag' ? 'pl-8' : 'pl-3'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
                         {...field}
