@@ -34,7 +34,7 @@ export function setupWebSocket(): WebSocket | null {
     const host = window.location.host;
     
     // Skip WebSocket setup in certain environments
-    if (!host || host.includes('localhost:undefined')) {
+    if (!host || host.includes('localhost:undefined') || host.includes('undefined')) {
       isConnecting = false;
       return null;
     }
