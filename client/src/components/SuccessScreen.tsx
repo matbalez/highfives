@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import highFivesLogo from "@/assets/hf square.png";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { X } from "lucide-react";
 
 interface SuccessScreenProps {
   highFive: HighFiveDetails;
@@ -44,6 +45,14 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
       role="dialog"
     >
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 m-4 relative">
+        {/* Close button */}
+        <button 
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5" />
+        </button>
         <div className="flex flex-col items-center">
           {/* Logo */}
           <img src={highFivesLogo} alt="High Fives Logo" className="h-20 mb-5" />
