@@ -19,12 +19,12 @@ export default function Footer() {
           
           {/* Right side - Attribution */}
           <div className="text-right">
-            <div>
+            <div className="text-gray-500 font-normal">
               Built by <a 
                 href="https://x.com/matbalez" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:underline"
               >
                 Mat Balez
               </a>
@@ -33,7 +33,7 @@ export default function Footer() {
         </div>
         
         {/* Disclaimer text */}
-        <div className="mt-2 text-gray-500 text-sm">
+        <div className="mt-8 text-gray-500 text-sm font-light">
           Disclaimer: consider this vibe-coded app a prototype. Use with caution.
         </div>
       </div>
