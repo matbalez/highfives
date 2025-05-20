@@ -13,7 +13,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="text-primary hover:underline font-medium"
             >
-              Find us on Nostr
+              High Fives on Nostr
             </a>
           </div>
           
