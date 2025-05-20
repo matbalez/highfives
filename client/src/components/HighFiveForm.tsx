@@ -213,7 +213,7 @@ export default function HighFiveForm() {
                       onClick={() => setIsNpubMode(!isNpubMode)}
                       className="text-xs text-primary hover:text-primary/80 font-medium"
                     >
-                      {isNpubMode ? "Use easy address" : "Use npub"}
+                      {isNpubMode ? "Use ₿tag" : "Use npub"}
                     </button>
                   </div>
                   <FormControl>
@@ -222,7 +222,7 @@ export default function HighFiveForm() {
                         <span className="absolute inset-y-0 left-3 flex items-center text-black">₿</span>
                       )}
                       <Input
-                        placeholder={isNpubMode ? "Enter an npub" : "Enter an Easy Bitcoin Address"}
+                        placeholder={isNpubMode ? "Enter an npub" : "Enter a ₿tag"}
                         className={`p-3 ${isNpubMode ? 'pl-3' : 'pl-8'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
                         {...field}
                       />
