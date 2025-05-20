@@ -158,9 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      console.log(`Generating invoice for lightning address: ${address}`);
+      console.log(`Generating invoice for Lightning Address: ${address}`);
       
-      // Generate an actual Lightning invoice (payment request)
+      // Generate an actual Lightning invoice using the @getalby/lightning-tools library
       const amount = 21000; // 21,000 sats for the High Five
       const comment = "High Five Payment";
       const invoice = await getInvoiceFromLightningAddress(address, amount, comment);
