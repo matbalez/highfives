@@ -34,10 +34,11 @@ export async function getInvoiceFromLightningAddress(
       return null;
     }
     
-    // Generate an invoice
+    // Generate an invoice with a 72-hour expiry (259200 seconds)
     const invoice = await ln.requestInvoice({
       satoshi: amount,
       comment: comment,
+      expiry: 259200, // 72 hours in seconds
     });
     
     if (!invoice || !invoice.paymentRequest) {
