@@ -225,34 +225,60 @@ export default function HighFiveForm() {
                 <FormItem className="space-y-2">
                   <div className="flex justify-between items-center">
                     <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
-                    <div className="flex space-x-3">
-                      {inputMode !== 'btag' && (
-                        <button 
-                          type="button"
-                          onClick={() => setInputMode('btag')}
-                          className="text-xs text-primary hover:text-primary/80 font-medium"
-                        >
-                          Use ₿tag
-                        </button>
-                      )}
-                      {inputMode !== 'npub' && (
-                        <button 
-                          type="button"
-                          onClick={() => setInputMode('npub')}
-                          className="text-xs text-primary hover:text-primary/80 font-medium"
-                        >
-                          Use npub
-                        </button>
-                      )}
-                      {inputMode !== 'lightning' && (
-                        <button 
-                          type="button"
-                          onClick={() => setInputMode('lightning')}
-                          className="text-xs text-primary hover:text-primary/80 font-medium"
-                        >
-                          Use LN Address
-                        </button>
-                      )}
+                    <div className="flex items-center text-xs">
+                      <span className="mr-1">Use:</span>
+                      
+                      {/* Mode switcher buttons */}
+                      <div className="flex items-center">
+                        {/* Button for btag/npub */}
+                        {inputMode === 'btag' ? (
+                          <button 
+                            type="button"
+                            onClick={() => setInputMode('npub')}
+                            className="text-primary hover:text-primary/80 font-medium"
+                          >
+                            npub
+                          </button>
+                        ) : inputMode === 'npub' ? (
+                          <button 
+                            type="button"
+                            onClick={() => setInputMode('btag')}
+                            className="text-primary hover:text-primary/80 font-medium"
+                          >
+                            ₿tag
+                          </button>
+                        ) : (
+                          <button 
+                            type="button"
+                            onClick={() => setInputMode('btag')}
+                            className="text-primary hover:text-primary/80 font-medium"
+                          >
+                            ₿tag
+                          </button>
+                        )}
+                        
+                        {/* Separator */}
+                        <span className="mx-1">|</span>
+                        
+                        {/* Button for Lightning Address */}
+                        {inputMode === 'lightning' ? (
+                          <button 
+                            type="button"
+                            onClick={() => setInputMode('btag')}
+                            className="text-primary hover:text-primary/80 font-medium"
+                          >
+                            ₿tag
+                          </button>
+                        ) : (
+                          <button 
+                            type="button"
+                            onClick={() => setInputMode('lightning')}
+                            className="text-primary hover:text-primary/80 font-medium"
+                          >
+                            LN Address
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <FormControl>
