@@ -242,7 +242,7 @@ export default function HighFiveForm() {
                         onChange={(e) => setInputMode(e.target.value as 'btag' | 'npub')}
                         className="text-xs h-7 px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[120px]"
                       >
-                        <option value="btag">Lightning/₿tag</option>
+                        <option value="btag">₿tag</option>
                         <option value="npub">npub</option>
                       </select>
                     </div>
@@ -254,8 +254,8 @@ export default function HighFiveForm() {
                       )}
                       <Input
                         placeholder={
-                          inputMode === 'btag' ? "Enter an LN Address or BIP-353 address" : 
-                          "Enter an npub"
+                          inputMode === 'btag' ? "LN Address or BIP-353 address" : 
+                          "npub"
                         }
                         className={`p-3 ${inputMode === 'btag' ? 'pl-8' : 'pl-3'} focus:ring-primary placeholder:text-gray-400 placeholder:font-normal`}
                         {...field}
