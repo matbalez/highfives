@@ -34,7 +34,7 @@ export default function Footer() {
         
         {/* Disclaimer text */}
         <div className="mt-8 text-gray-500 text-sm font-light">
-          Disclaimer: consider this vibe-coded app a prototype. Use with caution.
+          Early prototype. Use with caution.
         </div>
       </div>
     </footer>
