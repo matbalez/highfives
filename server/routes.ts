@@ -40,9 +40,11 @@ async function getCombinedPaymentInstructions(address: string): Promise<{
   try {
     const paymentInstructions = await lookupPaymentInstructions(address);
     if (paymentInstructions) {
+      // Determine if this is a BOLT11 or BOLT12 offer
+      const paymentType = paymentInstructions.startsWith('lno') ? 'bolt12' : 'bolt11';
       return {
         paymentInstructions,
-        paymentType: 'bolt11',
+        paymentType,
         lightningAddress: address
       };
     }
