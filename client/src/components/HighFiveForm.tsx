@@ -86,7 +86,14 @@ export default function HighFiveForm() {
       
       if (inputMode === 'lightning') {
         // For Lightning Address, get invoice directly
-        response = await axios.get(`/api/lightning-invoice?address=${encodeURIComponent(recipient)}`);
+        try {
+          response = await axios.get(`/api/lightning-invoice?address=${encodeURIComponent(recipient)}`);
+        } catch (error) {
+          console.error("Error with Lightning Address:", error);
+          // Attempt to fall back to normal payment instructions lookup
+          // This handles cases where the address might work with regular DNS lookup
+          response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(recipient)}`);
+        }
       } else {
         // For ₿tag or npub, look up payment instructions
         const paramName = inputMode === 'btag' ? 'btag' : 'npub';
