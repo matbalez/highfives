@@ -42,13 +42,19 @@ export default function PaymentModal({
       // Recipient field can be either a btag or an npub
       const recipient = highFiveDetails.recipient;
       
-      // Check if this is a Lightning Address (has @ but not an npub)
-      const isLightningAddress = recipient.includes('@') && !recipient.startsWith('npub');
+      // Determine the type of recipient
+      let endpoint;
       
-      // Call the appropriate API endpoint
-      const endpoint = isLightningAddress 
-        ? `/api/lightning-invoice?address=${encodeURIComponent(recipient)}`
-        : `/api/payment-instructions?btag=${encodeURIComponent(recipient)}`;
+      if (recipient.startsWith('npub')) {
+        // Handle Nostr npub
+        endpoint = `/api/payment-instructions?npub=${encodeURIComponent(recipient)}`;
+      } else if (highFiveDetails.recipientType === 'lightning') {
+        // Handle Lightning Address
+        endpoint = `/api/lightning-invoice?address=${encodeURIComponent(recipient)}`;
+      } else {
+        // Handle btag (default)
+        endpoint = `/api/payment-instructions?btag=${encodeURIComponent(recipient)}`;
+      }
         
       axios.get(endpoint)
         .then(response => {

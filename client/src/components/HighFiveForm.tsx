@@ -84,16 +84,16 @@ export default function HighFiveForm() {
       let response;
       const recipient = values.recipient;
       
-      // Check if the recipient format is a Lightning Address (contains @ but doesn't start with 'npub')
-      const isLightningAddress = recipient.includes('@') && !recipient.startsWith('npub');
-      
-      if (inputMode === 'lightning' || isLightningAddress) {
+      // Each address type should use its specified endpoint
+      if (inputMode === 'lightning') {
         // For Lightning Address, get invoice directly
         response = await axios.get(`/api/lightning-invoice?address=${encodeURIComponent(recipient)}`);
+      } else if (inputMode === 'npub') {
+        // For npub, look up payment instructions via npub endpoint
+        response = await axios.get(`/api/payment-instructions?npub=${encodeURIComponent(recipient)}`);
       } else {
-        // For ₿tag or npub, look up payment instructions
-        const paramName = inputMode === 'btag' ? 'btag' : 'npub';
-        response = await axios.get(`/api/payment-instructions?${paramName}=${encodeURIComponent(recipient)}`);
+        // For ₿tag, use the btag endpoint for DNS lookup
+        response = await axios.get(`/api/payment-instructions?btag=${encodeURIComponent(recipient)}`);
       }
       
       if (response.data && response.data.paymentInstructions) {
@@ -124,7 +124,8 @@ export default function HighFiveForm() {
           sender: values.sender || undefined,
           profileName: response.data.profileName,
           nostrEventId: result.nostrEventId,
-          senderProfileName: result.senderProfileName
+          senderProfileName: result.senderProfileName,
+          recipientType: inputMode // Include the recipient type
         });
         
         // Open payment modal

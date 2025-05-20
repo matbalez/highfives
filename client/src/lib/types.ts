@@ -5,4 +5,5 @@ export interface HighFiveDetails {
   nostrEventId?: string;
   profileName?: string;
   senderProfileName?: string;
+  recipientType?: 'btag' | 'npub' | 'lightning';
 }
