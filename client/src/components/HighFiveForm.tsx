@@ -226,7 +226,7 @@ export default function HighFiveForm() {
                   <div className="flex justify-between items-center">
                     <FormLabel className="font-futura font-bold text-lg">Who to High Five</FormLabel>
                     <div className="flex items-center text-xs">
-                      <span className="mr-1">Use:</span>
+                      <span className="mr-1 text-gray-500 font-normal">Use:</span>
                       
                       {/* Mode switcher buttons */}
                       <div className="flex items-center">
@@ -258,7 +258,7 @@ export default function HighFiveForm() {
                         )}
                         
                         {/* Separator */}
-                        <span className="mx-1">|</span>
+                        <span className="mx-1 text-gray-500 font-normal">|</span>
                         
                         {/* Button for Lightning Address */}
                         {inputMode === 'lightning' ? (
