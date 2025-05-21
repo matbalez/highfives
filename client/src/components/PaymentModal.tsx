@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { X } from "lucide-react";
+import { X, Copy, CheckCircle2 } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -31,6 +31,7 @@ export default function PaymentModal({
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Fetch payment instructions when the modal opens
   useEffect(() => {
@@ -116,6 +117,34 @@ export default function PaymentModal({
     }
   };
 
+  // Function to copy payment instructions to clipboard
+  const copyToClipboard = () => {
+    if (paymentData?.paymentInstructions) {
+      navigator.clipboard.writeText(paymentData.paymentInstructions)
+        .then(() => {
+          setCopied(true);
+          toast({
+            title: "Copied!",
+            description: "Payment instructions copied to clipboard",
+            variant: "default",
+          });
+          
+          // Reset copy status after 2 seconds
+          setTimeout(() => {
+            setCopied(false);
+          }, 2000);
+        })
+        .catch(err => {
+          console.error('Error copying to clipboard:', err);
+          toast({
+            title: "Copy failed",
+            description: "Could not copy to clipboard",
+            variant: "destructive",
+          });
+        });
+    }
+  };
+
   // Get the appropriate label for the QR code based on payment type
   const getQRCodeLabel = () => {
     if (!paymentData) return "";
@@ -123,7 +152,7 @@ export default function PaymentModal({
     if (paymentData.paymentType === 'lnurl') {
       return "Pay this LNURL";
     } else if (paymentData.paymentType === 'lno') {
-      return "Pay with your BOLT12 wallet";
+      return "Pay this BOLT12 offer";
     } else if (paymentData.paymentType === 'bolt11') {
       return "Pay this Lightning invoice";
     } else {
@@ -135,7 +164,7 @@ export default function PaymentModal({
   const getAdditionalInfo = () => {
     if (!paymentData) return null;
     
-    if (paymentData.paymentType === 'lnurl' && paymentData.lightningAddress) {
+    if (paymentData.lightningAddress) {
       return (
         <div className="text-center mt-2 text-xs text-gray-500">
           Lightning Address: {paymentData.lightningAddress}
@@ -186,8 +215,18 @@ export default function PaymentModal({
                 />
               </div>
               
-              <div className="text-center mt-4 text-sm text-gray-600">
-                {getQRCodeLabel()}
+              <div className="flex items-center justify-center mt-4 gap-2">
+                <span className="text-sm text-gray-600">{getQRCodeLabel()}</span>
+                <button 
+                  onClick={copyToClipboard}
+                  className="inline-flex items-center justify-center p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  title="Copy payment instructions"
+                >
+                  {copied ? 
+                    <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
+                    <Copy className="h-4 w-4 text-gray-500" />
+                  }
+                </button>
               </div>
               
               {getAdditionalInfo()}
