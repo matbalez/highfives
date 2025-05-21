@@ -5,8 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { X } from "lucide-react";
-import { addCopyButton, removeCopyButton } from "./DOMCopyButton";
+import { X, Clipboard } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -119,24 +118,38 @@ export default function PaymentModal({
   };
 
     // Simple function to copy text without triggering any API calls
-  // Add vanilla JS copy button when payment data changes
-  useEffect(() => {
-    if (paymentData?.paymentInstructions) {
-      // Short delay to ensure the container is rendered
-      setTimeout(() => {
-        const container = document.getElementById('payment-action-container');
-        if (container) {
-          // Add the vanilla JS copy button to our container
-          addCopyButton('#payment-action-container', paymentData.paymentInstructions, toast);
-        }
-      }, 100);
-    }
+  // We'll use a very simple approach for copying using a hidden input field
+  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  
+  // Function to handle copy via a hidden form field
+  const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault();
     
-    // Clean up on unmount
-    return () => {
-      removeCopyButton();
-    };
-  }, [paymentData, toast]);
+    if (!paymentData?.paymentInstructions) return;
+    
+    // Get our hidden input field
+    const input = document.getElementById('hidden-invoice-input') as HTMLInputElement;
+    if (!input) return;
+    
+    // Select the text and copy it
+    input.select();
+    input.setSelectionRange(0, 99999); // For mobile devices
+    
+    try {
+      document.execCommand('copy');
+      setShowCopiedMessage(true);
+      
+      toast({
+        title: "Copied!",
+        description: "Payment instructions copied to clipboard"
+      });
+      
+      // Reset the status after a delay
+      setTimeout(() => setShowCopiedMessage(false), 2000);
+    } catch (err) {
+      console.error("Copy failed: ", err);
+    }
+  };
 
   // Get the appropriate label for the QR code based on payment type and content
   const getQRCodeLabel = () => {
@@ -236,8 +249,28 @@ export default function PaymentModal({
                 />
               </div>
               
-              <div className="text-center mt-4" id="payment-action-container">
+              <div className="text-center mt-4">
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
+                
+                {/* Hidden input field to facilitate reliable copying */}
+                <form className="hidden">
+                  <input 
+                    id="hidden-invoice-input" 
+                    type="text" 
+                    readOnly 
+                    value={paymentData.paymentInstructions}
+                  />
+                </form>
+                
+                {/* Simple copy button that uses native form selection */}
+                <button
+                  onClick={handleCopy}
+                  type="button"
+                  className="mt-2 px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm flex items-center mx-auto gap-2 transition-colors"
+                >
+                  <Clipboard size={16} />
+                  <span>{showCopiedMessage ? "Copied!" : "Copy payment instructions"}</span>
+                </button>
               </div>
               
               {getAdditionalInfo()}
