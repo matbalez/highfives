@@ -246,23 +246,7 @@ export default function PaymentModal({
               className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors"
               type="button"
               disabled={isLoading || !paymentData || !paymentData.paymentInstructions}
-              onClick={(e) => {
-                e.preventDefault();
-                if (paymentData?.paymentInstructions) {
-                  const textArea = document.createElement('textarea');
-                  textArea.value = paymentData.paymentInstructions;
-                  textArea.style.position = 'fixed';
-                  document.body.appendChild(textArea);
-                  textArea.select();
-                  document.execCommand('copy');
-                  document.body.removeChild(textArea);
-                  
-                  toast({
-                    title: "Copied to clipboard",
-                    description: "Payment instructions copied successfully",
-                  });
-                }
-              }}
+              onClick={copyToClipboard}
             >
               Copy payment instructions
             </button>
