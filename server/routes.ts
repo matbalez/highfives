@@ -142,9 +142,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } 
           // For npub recipients, try to get their Lightning Address
           else if (validation.data.recipient.startsWith('npub')) {
-            const npubLightningAddress = await getLightningAddressFromNpub(validation.data.recipient);
-            if (npubLightningAddress) {
-              lightningAddress = npubLightningAddress;
+            // This function returns string | null but we need string | undefined
+            // so convert null to undefined if needed
+            const result = await getLightningAddressFromNpub(validation.data.recipient);
+            if (result) {
+              lightningAddress = result; // Only assign if not null
               console.log(`Using Lightning Address ${lightningAddress} for npub ${validation.data.recipient}`);
             }
           }
