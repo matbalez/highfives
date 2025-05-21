@@ -103,12 +103,13 @@ export default function HighFivesList() {
                 )}
               </div>
               
-              {/* QR Code if available */}
+              {/* QR Code if available - only for BOLT12 offers */}
               {highFive.qrCodePath && (
-                <div className="mt-4 mb-2 flex justify-center">
+                <div className="mt-4 mb-2 flex flex-col items-center">
+                  <p className="text-sm text-gray-600 mb-2">Scan with your BOLT12 wallet:</p>
                   <img 
                     src={highFive.qrCodePath} 
-                    alt="QR Code for Bitcoin Lightning payment" 
+                    alt="QR Code for BOLT12 offer" 
                     className="w-48 h-48 object-contain" 
                   />
                 </div>

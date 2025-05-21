@@ -104,15 +104,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get Lightning invoice from request body if available
       const lightningInvoice = req.body.lightningInvoice as string | undefined;
 
-      // Generate and save QR code for any high five
+      // Generate and save QR code only for BOLT12 offers (from btag DNS lookup)
       let qrCodePath = null;
-      if (lightningInvoice) {
+      const isBolt12 = lightningInvoice && lightningInvoice.startsWith('bitcoin:?lno=');
+      
+      if (isBolt12 && lightningInvoice) {
         try {
-          // Save QR code locally and get the path
+          // Only save QR code for BOLT12 offers
           const localQrPath = await saveQRCodeLocally(lightningInvoice);
           if (localQrPath) {
             qrCodePath = localQrPath;
-            console.log(`Saved QR code for high five ${highFive.id} at ${qrCodePath}`);
+            console.log(`Saved QR code for BOLT12 offer (high five ${highFive.id}) at ${qrCodePath}`);
             
             // Update the high five with QR code path
             const updatedWithQr = await storage.updateHighFiveQRCodePath(highFive.id, qrCodePath);
@@ -123,6 +125,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (err) {
           console.error('Error saving QR code:', err);
         }
+      } else {
+        console.log(`Skipping QR code storage for non-BOLT12 payment (${highFive.id})`);
       }
         
       // Only proceed with Nostr publication if we have a valid lightning invoice
