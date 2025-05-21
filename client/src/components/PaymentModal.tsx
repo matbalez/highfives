@@ -220,7 +220,9 @@ export default function PaymentModal({
                     <div className="p-3 border-x border-b border-gray-200 rounded-b-md bg-white">
                       <div className="text-xs font-mono p-2 rounded border border-gray-200 overflow-auto break-all select-all cursor-pointer" style={{ fontSize: '9px', maxHeight: '120px' }}>
                         {isBolt12 
-                          ? paymentData.paymentInstructions.substring(paymentData.paymentInstructions.indexOf('lno')) // Extract just the lno part for BOLT12 offers
+                          ? (paymentData.paymentInstructions.indexOf('lno=') !== -1 
+                              ? paymentData.paymentInstructions.substring(paymentData.paymentInstructions.indexOf('lno=') + 4) // Remove lno= prefix
+                              : paymentData.paymentInstructions) // Fallback if format is different
                           : paymentData.paymentInstructions // Show full invoice for other payment types
                         }
                       </div>
