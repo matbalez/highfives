@@ -233,12 +233,37 @@ export default function PaymentModal({
                 />
               </div>
               
-              <div className="flex items-center justify-center mt-4 gap-2">
-                <span className="text-sm text-gray-600">{getQRCodeLabel()}</span>
-                {/* Special self-contained copy button that doesn't interfere with the parent component */}
-                <CopyButton 
-                  text={paymentData.paymentInstructions} 
-                />
+              <div className="flex flex-col items-center mt-4 gap-2">
+                <div className="text-sm text-gray-600">{getQRCodeLabel()}</div>
+                <button
+                  className="mt-2 px-4 py-1 text-xs rounded bg-primary/10 hover:bg-primary/20 text-primary flex items-center gap-1"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Create a temporary element
+                    const el = document.createElement('textarea');
+                    el.value = paymentData.paymentInstructions;
+                    el.setAttribute('readonly', '');
+                    el.style.position = 'absolute';
+                    el.style.left = '-9999px';
+                    document.body.appendChild(el);
+                    
+                    // Select and copy the text
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    
+                    // Show toast notification
+                    toast({
+                      title: "Copied to clipboard",
+                      description: "You can now paste the payment instructions in your wallet app",
+                    });
+                  }}
+                >
+                  <span>Copy to clipboard</span>
+                </button>
               </div>
               
               {getAdditionalInfo()}
