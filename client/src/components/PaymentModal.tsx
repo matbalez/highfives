@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { X, Clipboard, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -26,12 +26,12 @@ export default function PaymentModal({
   onClose,
   onConfirmPayment,
 }: PaymentModalProps) {
-  const qrCodeRef = React.useRef<HTMLDivElement>(null);
+  const qrCodeRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
 
   // Fetch payment instructions when the modal opens
   useEffect(() => {
@@ -39,6 +39,7 @@ export default function PaymentModal({
       setIsLoading(true);
       setError(null);
       setPaymentData(null);
+      setIsDetailsExpanded(false); // Reset expansion state
       
       // Recipient field can be either a btag or an npub
       const recipient = highFiveDetails.recipient;
@@ -107,47 +108,12 @@ export default function PaymentModal({
     if (paymentData && paymentData.paymentInstructions) {
       onConfirmPayment(paymentData.paymentInstructions);
     } else {
-      // Should never happen now, but just in case
       toast({
         title: "Error",
         description: "No valid payment instructions available.",
         variant: "destructive",
       });
       onClose();
-    }
-  };
-
-    // Simple function to copy text without triggering any API calls
-  // We'll use a very simple approach for copying using a hidden input field
-  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
-  
-  // Function to handle copy via a hidden form field
-  const handleCopy = (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    if (!paymentData?.paymentInstructions) return;
-    
-    // Get our hidden input field
-    const input = document.getElementById('hidden-invoice-input') as HTMLInputElement;
-    if (!input) return;
-    
-    // Select the text and copy it
-    input.select();
-    input.setSelectionRange(0, 99999); // For mobile devices
-    
-    try {
-      document.execCommand('copy');
-      setShowCopiedMessage(true);
-      
-      toast({
-        title: "Copied!",
-        description: "Payment instructions copied to clipboard"
-      });
-      
-      // Reset the status after a delay
-      setTimeout(() => setShowCopiedMessage(false), 2000);
-    } catch (err) {
-      console.error("Copy failed: ", err);
     }
   };
 
@@ -184,6 +150,9 @@ export default function PaymentModal({
     }
     return null;
   };
+
+  // Check if payment is BOLT12 offer
+  const isBolt12 = paymentData?.paymentInstructions.startsWith('bitcoin:?lno=');
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -230,52 +199,44 @@ export default function PaymentModal({
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
                 
                 {/* Collapsible payment instructions */}
-                {(() => {
-                  // Add state for the collapsible component
-                  const [isExpanded, setIsExpanded] = useState(false);
-                  const isBolt12 = paymentData.paymentInstructions.startsWith('bitcoin:?lno=');
+                <div className="mt-3">
+                  {/* Collapsible header */}
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200 text-left focus:outline-none"
+                    onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
+                  >
+                    <span className="text-sm font-medium text-gray-700">
+                      {isBolt12 ? "See offer details" : "Payment instructions"}
+                    </span>
+                    {isDetailsExpanded ? 
+                      <ChevronUp size={16} className="text-gray-500" /> : 
+                      <ChevronDown size={16} className="text-gray-500" />
+                    }
+                  </button>
                   
-                  return (
-                    <div className="mt-3">
-                      {/* Collapsible header */}
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200 text-left focus:outline-none"
-                        onClick={() => setIsExpanded(!isExpanded)}
-                      >
-                        <span className="text-sm font-medium text-gray-700">
-                          {isBolt12 ? "See offer details" : "Payment instructions"}
-                        </span>
-                        {isExpanded ? 
-                          <ChevronUp size={16} className="text-gray-500" /> : 
-                          <ChevronDown size={16} className="text-gray-500" />
+                  {/* Collapsible content */}
+                  {isDetailsExpanded && (
+                    <div className="p-3 border-x border-b border-gray-200 rounded-b-md bg-white">
+                      <div className="text-xs font-mono p-2 rounded border border-gray-200 overflow-auto break-all select-all cursor-pointer" style={{ fontSize: '9px', maxHeight: '120px' }}>
+                        {isBolt12 
+                          ? paymentData.paymentInstructions.substring(11) // Extract just the lno part for BOLT12 offers
+                          : paymentData.paymentInstructions // Show full invoice for other payment types
                         }
-                      </button>
-                      
-                      {/* Collapsible content */}
-                      {isExpanded && (
-                        <div className="p-3 border-x border-b border-gray-200 rounded-b-md bg-white">
-                          <div className="text-xs font-mono p-2 rounded border border-gray-200 overflow-auto break-all select-all cursor-pointer" style={{ fontSize: '9px', maxHeight: '120px' }}>
-                            {isBolt12 
-                              ? paymentData.paymentInstructions.substring(11) // Extract just the lno part for BOLT12 offers
-                              : paymentData.paymentInstructions // Show full invoice for other payment types
-                            }
-                          </div>
-                          <div className="text-xs text-gray-500 mt-2">
-                            Tap and hold on the text above to select and copy
-                          </div>
-                        </div>
-                      )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Tap and hold on the text above to select and copy
+                      </div>
                     </div>
-                  );
-                })()}
+                  )}
+                </div>
               </div>
               
               {getAdditionalInfo()}
             </>
           )}
           
-          <div className="w-full flex flex-col gap-3">
+          <div className="w-full flex flex-col gap-3 mt-4">
             <Button 
               className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
               onClick={handleConfirmPayment}
@@ -283,8 +244,6 @@ export default function PaymentModal({
             >
               {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
             </Button>
-            
-            {/* No instructions needed with the new button */}
           </div>
         </div>
       </DialogContent>
