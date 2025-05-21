@@ -16,7 +16,7 @@ interface PaymentModalProps {
 
 interface PaymentData {
   paymentInstructions: string;
-  paymentType?: 'lnurl' | 'lno';
+  paymentType?: string;
   lightningAddress?: string;
 }
 
@@ -145,15 +145,16 @@ export default function PaymentModal({
     }
   };
 
-  // Get the appropriate label for the QR code based on payment type
+  // Get the appropriate label for the QR code based on payment type and content
   const getQRCodeLabel = () => {
     if (!paymentData) return "";
     
-    if (paymentData.paymentType === 'lnurl') {
-      return "Pay this LNURL";
-    } else if (paymentData.paymentType === 'lno') {
+    // Check if this is a BOLT12 offer based on the content (starts with bitcoin:?lno=)
+    if (paymentData.paymentInstructions.startsWith('bitcoin:?lno=')) {
       return "Pay this BOLT12 offer";
-    } else if (paymentData.paymentType === 'bolt11') {
+    } else if (paymentData.paymentType === 'lnurl') {
+      return "Pay this LNURL";
+    } else if (paymentData.paymentType && paymentData.paymentType.includes('bolt11')) {
       return "Pay this Lightning invoice";
     } else {
       return "Scan with a Lightning wallet";
@@ -165,7 +166,10 @@ export default function PaymentModal({
     if (!paymentData) return null;
     
     // Only show Lightning Address for BOLT11/Lightning Address payments, not for BOLT12 offers
-    if (paymentData.lightningAddress && paymentData.paymentType !== 'lno') {
+    // Detect BOLT12 offers by checking if the payment instruction starts with bitcoin:?lno=
+    const isBolt12 = paymentData.paymentInstructions.startsWith('bitcoin:?lno=');
+    
+    if (paymentData.lightningAddress && !isBolt12) {
       return (
         <div className="text-center mt-2 text-xs text-gray-500">
           Lightning Address: {paymentData.lightningAddress}
