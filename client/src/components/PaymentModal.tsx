@@ -189,6 +189,13 @@ export default function PaymentModal({
           Scan the QR code below with your Bitcoin Lightning wallet
         </DialogDescription>
         
+        {/* Show tips for copying if we have payment data */}
+        {paymentData && paymentData.paymentInstructions && (
+          <div className="mt-2 text-center text-xs text-gray-500">
+            Tip: Long-press the QR code to copy the payment details on your device.
+          </div>
+        )}
+        
         <div className="mt-4 flex flex-col items-center">
           {isLoading ? (
             <div className="text-center p-8 flex flex-col items-center justify-center">
@@ -205,7 +212,20 @@ export default function PaymentModal({
             <>
               <div 
                 ref={qrCodeRef} 
-                className="bg-white p-5 rounded-lg border-2 border-gray-200"
+                className="bg-white p-5 rounded-lg border-2 border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  if (navigator.clipboard) {
+                    navigator.clipboard.writeText(paymentData.paymentInstructions)
+                      .then(() => {
+                        toast({
+                          title: "Copied",
+                          description: "Payment instructions copied to clipboard"
+                        });
+                      })
+                      .catch(err => console.error("Copy failed:", err));
+                  }
+                }}
+                title="Click to copy payment instructions"
               >
                 <QRCodeSVG
                   value={paymentData.paymentInstructions}
