@@ -225,20 +225,7 @@ export default function PaymentModal({
             <>
               <div 
                 ref={qrCodeRef} 
-                className="bg-white p-5 rounded-lg border-2 border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  if (navigator.clipboard) {
-                    navigator.clipboard.writeText(paymentData.paymentInstructions)
-                      .then(() => {
-                        toast({
-                          title: "Copied",
-                          description: "Payment instructions copied to clipboard"
-                        });
-                      })
-                      .catch(err => console.error("Copy failed:", err));
-                  }
-                }}
-                title="Click to copy payment instructions"
+                className="bg-white p-5 rounded-lg border-2 border-gray-200"
               >
                 <QRCodeSVG
                   value={paymentData.paymentInstructions}
@@ -252,14 +239,16 @@ export default function PaymentModal({
               <div className="text-center mt-4">
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
                 
-                {/* Display truncated payment instructions with instructions */}
+                {/* Display full payment instructions with instructions */}
                 <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
                   <div className="text-xs text-gray-500 mb-2">
                     Payment instructions:
                   </div>
-                  <div className="text-xs font-mono bg-white p-2 rounded border border-gray-200 overflow-hidden text-ellipsis break-all select-all cursor-pointer">
-                    {paymentData.paymentInstructions.substring(0, 80) + 
-                     (paymentData.paymentInstructions.length > 80 ? '...' : '')}
+                  <div className="text-xs font-mono bg-white p-2 rounded border border-gray-200 overflow-auto break-all select-all cursor-pointer" style={{ fontSize: '9px', maxHeight: '100px' }}>
+                    {paymentData.paymentInstructions.startsWith('bitcoin:?lno=') 
+                      ? paymentData.paymentInstructions.substring(11) // Extract just the lno part for BOLT12 offers
+                      : paymentData.paymentInstructions // Show full invoice for other payment types
+                    }
                   </div>
                   <div className="text-xs text-gray-500 mt-2">
                     Tap and hold on the text above to select and copy
