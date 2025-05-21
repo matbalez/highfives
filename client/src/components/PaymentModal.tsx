@@ -236,7 +236,24 @@ export default function PaymentModal({
           
           {paymentData && paymentData.paymentInstructions && (
             <>
-              <div ref={qrCodeRef} className="bg-white p-5 rounded-lg border-2 border-gray-200">
+              <div 
+                ref={qrCodeRef} 
+                className="bg-white p-5 rounded-lg border-2 border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  const text = paymentData.paymentInstructions;
+                  navigator.clipboard.writeText(text)
+                    .then(() => {
+                      toast({
+                        title: "Copied to clipboard",
+                        description: "Payment instructions copied to clipboard"
+                      });
+                    })
+                    .catch(err => {
+                      console.error('Failed to copy', err);
+                    });
+                }}
+                title="Click to copy payment instructions"
+              >
                 <QRCodeSVG
                   value={paymentData.paymentInstructions}
                   size={250}
@@ -266,7 +283,7 @@ export default function PaymentModal({
             {/* Instructions to help users manually copy the invoice */}
             {paymentData && paymentData.paymentInstructions && (
               <div className="text-xs text-center text-gray-500 mt-1">
-                To copy the payment instructions, tap on the QR code and use your device's copy function
+                Click or tap on the QR code to copy the payment instructions
               </div>
             )}
           </div>
