@@ -198,16 +198,6 @@ export default function PaymentModal({
         <DialogTitle className="text-center text-xl font-bold">
           Send your bitcoin now
         </DialogTitle>
-        <DialogDescription className="text-center mt-2">
-          Scan the QR code below with your Bitcoin Lightning wallet
-        </DialogDescription>
-        
-        {/* Show tips for copying if we have payment data */}
-        {paymentData && paymentData.paymentInstructions && (
-          <div className="mt-2 text-center text-xs text-gray-500">
-            Tip: Long-press the QR code to copy the payment details on your device.
-          </div>
-        )}
         
         <div className="mt-4 flex flex-col items-center">
           {isLoading ? (
