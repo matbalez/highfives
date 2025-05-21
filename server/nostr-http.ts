@@ -276,7 +276,7 @@ function formatHighFiveContent(
     parts.push('');
     parts.push('You too can send them bitcoin with your BOLT12 wallet:');
     parts.push('');
-    parts.push(`![QR Code Payment](${highFive.qrCodeUrl})`);
+    parts.push(highFive.qrCodeUrl);
   }
   
   // No longer including the payment instruction text since we have the QR code
