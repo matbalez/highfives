@@ -6,7 +6,7 @@ import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { X } from "lucide-react";
-import CopyButton from "./CopyButton";
+import SimpleCopyButton from "./SimpleCopyButton";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -242,14 +242,13 @@ export default function PaymentModal({
           )}
           
           <div className="w-full flex flex-col gap-3">
-            <button 
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors"
-              type="button"
-              disabled={isLoading || !paymentData || !paymentData.paymentInstructions}
-              onClick={copyToClipboard}
-            >
-              Copy payment instructions
-            </button>
+            {paymentData && paymentData.paymentInstructions && (
+              <SimpleCopyButton 
+                text={paymentData.paymentInstructions}
+                label="Copy payment instructions"
+                className="w-full font-medium"
+              />
+            )}
             
             <Button 
               className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
