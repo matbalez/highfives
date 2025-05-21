@@ -13,6 +13,36 @@
   }
 }
 
+/* Copy button styles */
+.vanilla-copy-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.vanilla-copy-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.vanilla-copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
 @font-face {
   font-family: 'Futura';
   src: url('https://fonts.cdnfonts.com/css/futura-pt') format('woff2');

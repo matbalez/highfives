@@ -6,7 +6,7 @@ import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import { X } from "lucide-react";
-import StableButton from "./StableButton";
+import { addCopyButton, removeCopyButton } from "./DOMCopyButton";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -119,58 +119,24 @@ export default function PaymentModal({
   };
 
     // Simple function to copy text without triggering any API calls
-  // Stores the payment instructions in a ref so it can be accessed later
-  const paymentInstructionsRef = useRef<string | null>(null);
-  
+  // Add vanilla JS copy button when payment data changes
   useEffect(() => {
-    // Update the ref whenever payment data changes
     if (paymentData?.paymentInstructions) {
-      paymentInstructionsRef.current = paymentData.paymentInstructions;
+      // Short delay to ensure the container is rendered
+      setTimeout(() => {
+        const container = document.getElementById('payment-action-container');
+        if (container) {
+          // Add the vanilla JS copy button to our container
+          addCopyButton('#payment-action-container', paymentData.paymentInstructions, toast);
+        }
+      }, 100);
     }
-  }, [paymentData]);
-  
-  // Creates a hidden copy button after component mounts
-  useEffect(() => {
-    const copyButton = document.createElement('button');
-    copyButton.style.display = 'none';
-    copyButton.id = 'hidden-copy-button';
-    copyButton.setAttribute('data-testid', 'hidden-copy-button');
-    document.body.appendChild(copyButton);
     
-    // Add click handler
-    copyButton.addEventListener('click', () => {
-      if (!paymentInstructionsRef.current) return;
-      
-      try {
-        const input = document.createElement('input');
-        input.style.position = 'absolute';
-        input.style.left = '-9999px';
-        input.value = paymentInstructionsRef.current;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
-        
-        toast({
-          title: "Copied!",
-          description: "Payment instructions copied to clipboard",
-        });
-      } catch (error) {
-        console.error('Failed to copy:', error);
-        toast({
-          title: "Copy failed",
-          description: "Could not copy to clipboard",
-          variant: "destructive",
-        });
-      }
-    });
-    
-    // Cleanup on unmount
+    // Clean up on unmount
     return () => {
-      const button = document.getElementById('hidden-copy-button');
-      if (button) document.body.removeChild(button);
+      removeCopyButton();
     };
-  }, [toast]);
+  }, [paymentData, toast]);
 
   // Get the appropriate label for the QR code based on payment type and content
   const getQRCodeLabel = () => {
@@ -250,18 +216,8 @@ export default function PaymentModal({
                 />
               </div>
               
-              <div className="text-center mt-4">
+              <div className="text-center mt-4" id="payment-action-container">
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
-                
-                <StableButton 
-                  textToCopy={paymentData.paymentInstructions}
-                  onCopy={() => {
-                    toast({
-                      title: "Copied!",
-                      description: "Payment instructions copied to clipboard"
-                    });
-                  }}
-                />
               </div>
               
               {getAdditionalInfo()}
