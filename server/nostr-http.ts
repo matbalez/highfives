@@ -150,7 +150,7 @@ export async function publishHighFiveToNostr(highFive: {
         const qrCodePath = await saveQRCodeLocally(highFive.lightningInvoice);
         
         // Use the specified domain for QR code URLs
-        const baseUrl = 'https://highfives.fun';
+        const baseUrl = 'http://highgives.fun';
         const qrCodeFullUrl = `${baseUrl}${qrCodePath}`;
         
         console.log(`QR code image URL: ${qrCodeFullUrl}`);
