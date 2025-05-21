@@ -133,12 +133,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         try {
+          // Check if this is a Lightning Address (contains @ symbol)
+          const isLightningAddress = validation.data.recipient.includes('@');
+          
           // Publish to Nostr and wait for the result
           const nostrEventId = await publishHighFiveToNostr({
             recipient: validation.data.recipient,
             reason: validation.data.reason,
             sender: validation.data.sender || undefined,
-            lightningInvoice: lightningInvoice
+            lightningInvoice: lightningInvoice,
+            // Pass along the Lightning Address info if applicable
+            lightningAddress: isLightningAddress ? validation.data.recipient : undefined
           });
           
           // Update the high five with the Nostr event ID
