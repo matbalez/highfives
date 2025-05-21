@@ -274,16 +274,19 @@ function formatHighFiveContent(
   ];
   
   // Show different messages based on whether this is a Lightning Address or BOLT12
-  if (highFive.lightningAddress) {
-    // For Lightning Addresses - just include the Lightning Address text, no QR code
-    parts.push('');
-    parts.push(`You too can send them bitcoin to their Lightning Address: ${highFive.lightningAddress}`);
-  } else if (highFive.qrCodeUrl) {
+  // Check if this is a BOLT12 offer (will start with "bitcoin:?lno=")
+  const isBolt12 = highFive.lightningInvoice && highFive.lightningInvoice.startsWith('bitcoin:?lno=');
+  
+  if (isBolt12 && highFive.qrCodeUrl) {
     // For BOLT12 offers (from btag DNS lookup)
     parts.push('');
     parts.push('You too can send them bitcoin with your BOLT12 wallet:');
     parts.push('');
     parts.push(highFive.qrCodeUrl);
+  } else if (highFive.lightningAddress) {
+    // For Lightning Addresses - just include the Lightning Address text, no QR code
+    parts.push('');
+    parts.push(`You too can send them bitcoin to their Lightning Address: ${highFive.lightningAddress}`);
   }
   
   // No longer including the payment instruction text since we have the QR code
