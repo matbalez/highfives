@@ -5,7 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { X, Clipboard } from "lucide-react";
+import { X, Clipboard, ChevronDown, ChevronUp } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -229,21 +229,46 @@ export default function PaymentModal({
               <div className="text-center mt-4">
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
                 
-                {/* Display full payment instructions with instructions */}
-                <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
-                  <div className="text-xs text-gray-500 mb-2">
-                    Payment instructions:
-                  </div>
-                  <div className="text-xs font-mono bg-white p-2 rounded border border-gray-200 overflow-auto break-all select-all cursor-pointer" style={{ fontSize: '9px', maxHeight: '100px' }}>
-                    {paymentData.paymentInstructions.startsWith('bitcoin:?lno=') 
-                      ? paymentData.paymentInstructions.substring(11) // Extract just the lno part for BOLT12 offers
-                      : paymentData.paymentInstructions // Show full invoice for other payment types
-                    }
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    Tap and hold on the text above to select and copy
-                  </div>
-                </div>
+                {/* Collapsible payment instructions */}
+                {(() => {
+                  // Add state for the collapsible component
+                  const [isExpanded, setIsExpanded] = useState(false);
+                  const isBolt12 = paymentData.paymentInstructions.startsWith('bitcoin:?lno=');
+                  
+                  return (
+                    <div className="mt-3">
+                      {/* Collapsible header */}
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200 text-left focus:outline-none"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                      >
+                        <span className="text-sm font-medium text-gray-700">
+                          {isBolt12 ? "See offer details" : "Payment instructions"}
+                        </span>
+                        {isExpanded ? 
+                          <ChevronUp size={16} className="text-gray-500" /> : 
+                          <ChevronDown size={16} className="text-gray-500" />
+                        }
+                      </button>
+                      
+                      {/* Collapsible content */}
+                      {isExpanded && (
+                        <div className="p-3 border-x border-b border-gray-200 rounded-b-md bg-white">
+                          <div className="text-xs font-mono p-2 rounded border border-gray-200 overflow-auto break-all select-all cursor-pointer" style={{ fontSize: '9px', maxHeight: '120px' }}>
+                            {isBolt12 
+                              ? paymentData.paymentInstructions.substring(11) // Extract just the lno part for BOLT12 offers
+                              : paymentData.paymentInstructions // Show full invoice for other payment types
+                            }
+                          </div>
+                          <div className="text-xs text-gray-500 mt-2">
+                            Tap and hold on the text above to select and copy
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               
               {getAdditionalInfo()}
