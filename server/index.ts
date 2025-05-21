@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { runMigrations } from "./migrate";
 import { db } from "./db";
+import path from "path";
 
 const app = express();
 app.use(express.json());

@@ -381,16 +381,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve static QR code images from public directory
-  app.use('/qr-codes', express.static(qrCodesDir, {
-    index: false,
-    setHeaders: (res) => {
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Cache-Control', 'public, max-age=31536000');
-    }
-  }));
-  
-  console.log(`Serving QR code images from ${qrCodesDir}`);
+  // Remove duplicate code - QR code serving is now in index.ts
+  console.log(`QR code directory: ${qrCodesDir}`);
 
   const httpServer = createServer(app);
 
