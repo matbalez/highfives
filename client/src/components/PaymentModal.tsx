@@ -118,7 +118,11 @@ export default function PaymentModal({
   };
 
   // Function to copy payment instructions to clipboard
-  const copyToClipboard = () => {
+  const copyToClipboard = (e: React.MouseEvent) => {
+    // Prevent any default behavior or form submission
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (paymentData?.paymentInstructions) {
       navigator.clipboard.writeText(paymentData.paymentInstructions)
         .then(() => {
