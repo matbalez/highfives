@@ -252,25 +252,19 @@ export default function PaymentModal({
               <div className="text-center mt-4">
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
                 
-                {/* Hidden input field to facilitate reliable copying */}
-                <form className="hidden">
-                  <input 
-                    id="hidden-invoice-input" 
-                    type="text" 
-                    readOnly 
-                    value={paymentData.paymentInstructions}
-                  />
-                </form>
-                
-                {/* Simple copy button that uses native form selection */}
-                <button
-                  onClick={handleCopy}
-                  type="button"
-                  className="mt-2 px-4 py-2 rounded bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm flex items-center mx-auto gap-2 transition-colors"
-                >
-                  <Clipboard size={16} />
-                  <span>{showCopiedMessage ? "Copied!" : "Copy payment instructions"}</span>
-                </button>
+                {/* Display truncated payment instructions with instructions */}
+                <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                  <div className="text-xs text-gray-500 mb-2">
+                    Payment instructions:
+                  </div>
+                  <div className="text-xs font-mono bg-white p-2 rounded border border-gray-200 overflow-hidden text-ellipsis break-all select-all cursor-pointer">
+                    {paymentData.paymentInstructions.substring(0, 80) + 
+                     (paymentData.paymentInstructions.length > 80 ? '...' : '')}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    Tap and hold on the text above to select and copy
+                  </div>
+                </div>
               </div>
               
               {getAdditionalInfo()}
