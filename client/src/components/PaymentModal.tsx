@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { X } from "lucide-react";
-import SimpleCopyButton from "./SimpleCopyButton";
+import { X, Clipboard } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -119,44 +118,58 @@ export default function PaymentModal({
   };
 
     // Simple function to copy text without triggering any API calls
-  const copyToClipboard = (e: React.MouseEvent) => {
-    // React default behavior of re-rendering
-    e.preventDefault(); 
-    e.stopPropagation();
-    
-    // Return early if no payment data
-    if (!paymentData?.paymentInstructions) return;
-    
-    try {
-      // Use a hidden input element to copy text
-      const text = paymentData.paymentInstructions;
-      const input = document.createElement('input');
-      input.style.position = 'absolute';
-      input.style.left = '-9999px';
-      input.value = text;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      
-      // Set copied state without causing re-render
-      setCopied(true);
-      toast({
-        title: "Copied!",
-        description: "Payment instructions copied to clipboard",
-      });
-      
-      // Reset after delay
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-      toast({
-        title: "Copy failed",
-        description: "Could not copy to clipboard",
-        variant: "destructive",
-      });
+  // Stores the payment instructions in a ref so it can be accessed later
+  const paymentInstructionsRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    // Update the ref whenever payment data changes
+    if (paymentData?.paymentInstructions) {
+      paymentInstructionsRef.current = paymentData.paymentInstructions;
     }
-  };
+  }, [paymentData]);
+  
+  // Creates a hidden copy button after component mounts
+  useEffect(() => {
+    const copyButton = document.createElement('button');
+    copyButton.style.display = 'none';
+    copyButton.id = 'hidden-copy-button';
+    copyButton.setAttribute('data-testid', 'hidden-copy-button');
+    document.body.appendChild(copyButton);
+    
+    // Add click handler
+    copyButton.addEventListener('click', () => {
+      if (!paymentInstructionsRef.current) return;
+      
+      try {
+        const input = document.createElement('input');
+        input.style.position = 'absolute';
+        input.style.left = '-9999px';
+        input.value = paymentInstructionsRef.current;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        
+        toast({
+          title: "Copied!",
+          description: "Payment instructions copied to clipboard",
+        });
+      } catch (error) {
+        console.error('Failed to copy:', error);
+        toast({
+          title: "Copy failed",
+          description: "Could not copy to clipboard",
+          variant: "destructive",
+        });
+      }
+    });
+    
+    // Cleanup on unmount
+    return () => {
+      const button = document.getElementById('hidden-copy-button');
+      if (button) document.body.removeChild(button);
+    };
+  }, [toast]);
 
   // Get the appropriate label for the QR code based on payment type and content
   const getQRCodeLabel = () => {
@@ -242,14 +255,6 @@ export default function PaymentModal({
           )}
           
           <div className="w-full flex flex-col gap-3">
-            {paymentData && paymentData.paymentInstructions && (
-              <SimpleCopyButton 
-                text={paymentData.paymentInstructions}
-                label="Copy payment instructions"
-                className="w-full font-medium"
-              />
-            )}
-            
             <Button 
               className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
               onClick={handleConfirmPayment}
@@ -257,6 +262,13 @@ export default function PaymentModal({
             >
               {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
             </Button>
+            
+            {/* Instructions to help users manually copy the invoice */}
+            {paymentData && paymentData.paymentInstructions && (
+              <div className="text-xs text-center text-gray-500 mt-1">
+                To copy the payment instructions, tap on the QR code and use your device's copy function
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
