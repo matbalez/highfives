@@ -117,35 +117,78 @@ export default function PaymentModal({
     }
   };
 
-  // Function to copy payment instructions to clipboard
+  // Create a separate cache state to avoid refreshing the payment data
+  const [cachedInstructions, setCachedInstructions] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (paymentData?.paymentInstructions) {
+      setCachedInstructions(paymentData.paymentInstructions);
+    }
+  }, [paymentData?.paymentInstructions]);
+  
+  // Function to copy payment instructions to clipboard without triggering refresh
   const copyToClipboard = (e: React.MouseEvent) => {
-    // Prevent any default behavior or form submission
+    // Prevent default form submission and event bubbling
     e.preventDefault();
     e.stopPropagation();
     
-    if (paymentData?.paymentInstructions) {
-      navigator.clipboard.writeText(paymentData.paymentInstructions)
-        .then(() => {
+    // Use cached instructions to prevent refetching
+    if (cachedInstructions) {
+      // Copy text to clipboard using the Clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        // Use clipboard API
+        navigator.clipboard.writeText(cachedInstructions)
+          .then(() => {
+            // Show success message
+            setCopied(true);
+            toast({
+              title: "Copied!",
+              description: "Payment instructions copied to clipboard",
+              variant: "default",
+            });
+            
+            // Reset copy status after 2 seconds
+            setTimeout(() => {
+              setCopied(false);
+            }, 2000);
+          })
+          .catch(err => {
+            console.error('Error copying to clipboard:', err);
+            toast({
+              title: "Copy failed",
+              description: "Could not copy to clipboard",
+              variant: "destructive",
+            });
+          });
+      } else {
+        // Fallback method
+        const textArea = document.createElement("textarea");
+        textArea.value = cachedInstructions;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
           setCopied(true);
           toast({
             title: "Copied!",
             description: "Payment instructions copied to clipboard",
             variant: "default",
           });
-          
-          // Reset copy status after 2 seconds
-          setTimeout(() => {
-            setCopied(false);
-          }, 2000);
-        })
-        .catch(err => {
-          console.error('Error copying to clipboard:', err);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+          console.error('Fallback: Clipboard copy failed', err);
           toast({
             title: "Copy failed",
             description: "Could not copy to clipboard",
             variant: "destructive",
           });
-        });
+        }
+        
+        document.body.removeChild(textArea);
+      }
     }
   };
 
@@ -226,16 +269,23 @@ export default function PaymentModal({
               
               <div className="flex items-center justify-center mt-4 gap-2">
                 <span className="text-sm text-gray-600">{getQRCodeLabel()}</span>
-                <button 
+                <div 
                   onClick={copyToClipboard}
-                  className="inline-flex items-center justify-center p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                  className="inline-flex items-center justify-center p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                   title="Copy payment instructions"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      copyToClipboard(e as unknown as React.MouseEvent);
+                    }
+                  }}
                 >
                   {copied ? 
                     <CheckCircle2 className="h-4 w-4 text-green-500" /> : 
                     <Copy className="h-4 w-4 text-gray-500" />
                   }
-                </button>
+                </div>
               </div>
               
               {getAdditionalInfo()}
