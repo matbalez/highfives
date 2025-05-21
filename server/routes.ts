@@ -133,8 +133,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         try {
-          // Check if this is a Lightning Address (contains @ symbol)
-          const isLightningAddress = validation.data.recipient.includes('@');
+          // Variable to hold the Lightning Address
+          let lightningAddress: string | undefined;
+          
+          // Check if this is a direct Lightning Address (contains @ symbol)
+          if (validation.data.recipient.includes('@')) {
+            lightningAddress = validation.data.recipient;
+          } 
+          // For npub recipients, try to get their Lightning Address
+          else if (validation.data.recipient.startsWith('npub')) {
+            lightningAddress = await getLightningAddressFromNpub(validation.data.recipient);
+            if (lightningAddress) {
+              console.log(`Using Lightning Address ${lightningAddress} for npub ${validation.data.recipient}`);
+            }
+          }
           
           // Publish to Nostr and wait for the result
           const nostrEventId = await publishHighFiveToNostr({
@@ -142,8 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             reason: validation.data.reason,
             sender: validation.data.sender || undefined,
             lightningInvoice: lightningInvoice,
-            // Pass along the Lightning Address info if applicable
-            lightningAddress: isLightningAddress ? validation.data.recipient : undefined
+            // Pass along the Lightning Address if we have it
+            lightningAddress: lightningAddress
           });
           
           // Update the high five with the Nostr event ID
