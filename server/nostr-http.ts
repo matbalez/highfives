@@ -275,15 +275,9 @@ function formatHighFiveContent(
   
   // Show different messages based on whether this is a Lightning Address or BOLT12
   if (highFive.lightningAddress) {
-    // For Lightning Addresses
+    // For Lightning Addresses - just include the Lightning Address text, no QR code
     parts.push('');
     parts.push(`You too can send them bitcoin to their Lightning Address: ${highFive.lightningAddress}`);
-    
-    // Still include QR code if available
-    if (highFive.qrCodeUrl) {
-      parts.push('');
-      parts.push(highFive.qrCodeUrl);
-    }
   } else if (highFive.qrCodeUrl) {
     // For BOLT12 offers (from btag DNS lookup)
     parts.push('');
