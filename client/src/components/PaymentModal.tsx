@@ -5,7 +5,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { HighFiveDetails } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { X, Clipboard } from "lucide-react";
+import { X } from "lucide-react";
+import StableButton from "./StableButton";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -238,21 +239,7 @@ export default function PaymentModal({
             <>
               <div 
                 ref={qrCodeRef} 
-                className="bg-white p-5 rounded-lg border-2 border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  const text = paymentData.paymentInstructions;
-                  navigator.clipboard.writeText(text)
-                    .then(() => {
-                      toast({
-                        title: "Copied to clipboard",
-                        description: "Payment instructions copied to clipboard"
-                      });
-                    })
-                    .catch(err => {
-                      console.error('Failed to copy', err);
-                    });
-                }}
-                title="Click to copy payment instructions"
+                className="bg-white p-5 rounded-lg border-2 border-gray-200"
               >
                 <QRCodeSVG
                   value={paymentData.paymentInstructions}
@@ -265,6 +252,16 @@ export default function PaymentModal({
               
               <div className="text-center mt-4">
                 <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
+                
+                <StableButton 
+                  textToCopy={paymentData.paymentInstructions}
+                  onCopy={() => {
+                    toast({
+                      title: "Copied!",
+                      description: "Payment instructions copied to clipboard"
+                    });
+                  }}
+                />
               </div>
               
               {getAdditionalInfo()}
@@ -280,12 +277,7 @@ export default function PaymentModal({
               {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
             </Button>
             
-            {/* Instructions to help users manually copy the invoice */}
-            {paymentData && paymentData.paymentInstructions && (
-              <div className="text-xs text-center text-gray-500 mt-1">
-                Click or tap on the QR code to copy the payment instructions
-              </div>
-            )}
+            {/* No instructions needed with the new button */}
           </div>
         </div>
       </DialogContent>
