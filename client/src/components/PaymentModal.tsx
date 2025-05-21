@@ -164,7 +164,8 @@ export default function PaymentModal({
   const getAdditionalInfo = () => {
     if (!paymentData) return null;
     
-    if (paymentData.lightningAddress) {
+    // Only show Lightning Address for BOLT11/Lightning Address payments, not for BOLT12 offers
+    if (paymentData.lightningAddress && paymentData.paymentType !== 'lno') {
       return (
         <div className="text-center mt-2 text-xs text-gray-500">
           Lightning Address: {paymentData.lightningAddress}
