@@ -48,14 +48,11 @@ export async function lookupPaymentInstructions(btag: string): Promise<string | 
         return record;
       } 
       // Check for bitcoin URI format (bitcoin:?lno=...)
-      else if (record.includes('lno=')) {
+      else if (record.startsWith('bitcoin:') && record.includes('lno=')) {
         console.log('Found payment instruction in bitcoin URI format');
-        // Extract the lno parameter
-        const match = record.match(/lno=([^&]+)/);
-        if (match && match[1]) {
-          console.log('Extracted LNO payment instruction from URI');
-          return match[1];
-        }
+        // Return the full bitcoin: URI instead of just extracting the lno parameter
+        console.log('Returning full bitcoin URI:', record);
+        return record;
       }
       
       console.log('Found TXT record but could not extract a valid payment instruction');
