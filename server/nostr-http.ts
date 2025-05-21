@@ -90,6 +90,7 @@ export async function publishHighFiveToNostr(highFive: {
   reason: string;
   sender?: string;
   lightningInvoice?: string;
+  lightningAddress?: string;
 }): Promise<string | null> {
   try {
     // Get private key from environment variables
@@ -241,6 +242,7 @@ function formatHighFiveContent(
     sender?: string;
     lightningInvoice?: string;
     qrCodeUrl?: string;
+    lightningAddress?: string;
   }
 ): string {
   // Format sender display
@@ -271,8 +273,19 @@ function formatHighFiveContent(
     highFive.reason
   ];
   
-  // Add QR code image if available
-  if (highFive.qrCodeUrl) {
+  // Show different messages based on whether this is a Lightning Address or BOLT12
+  if (highFive.lightningAddress) {
+    // For Lightning Addresses
+    parts.push('');
+    parts.push(`You too can send them bitcoin to their Lightning Address: ${highFive.lightningAddress}`);
+    
+    // Still include QR code if available
+    if (highFive.qrCodeUrl) {
+      parts.push('');
+      parts.push(highFive.qrCodeUrl);
+    }
+  } else if (highFive.qrCodeUrl) {
+    // For BOLT12 offers (from btag DNS lookup)
     parts.push('');
     parts.push('You too can send them bitcoin with your BOLT12 wallet:');
     parts.push('');
