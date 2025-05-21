@@ -146,20 +146,29 @@ export async function publishHighFiveToNostr(highFive: {
       try {
         console.log(`Adding Lightning invoice to Nostr post: ${highFive.lightningInvoice.substring(0, 15)}...`);
 
-        // Save a local copy for display in our app (for our own UI)
-        await saveQRCodeLocally(highFive.lightningInvoice);
+        // Save a local copy and get the QR code path
+        const qrCodePath = await saveQRCodeLocally(highFive.lightningInvoice);
+        
+        // Get the server base URL for external access
+        // Use the request origin or default to localhost 
+        const baseUrl = process.env.SERVER_URL || 'http://localhost:5000';
+        const qrCodeFullUrl = `${baseUrl}${qrCodePath}`;
+        
+        console.log(`QR code image URL: ${qrCodeFullUrl}`);
 
-        // Completely replace the event content with the new format
+        // Completely replace the event content with the new format that includes the QR code image
         event.content = formatHighFiveContent({
           ...highFive,
-          lightningInvoice: highFive.lightningInvoice
+          lightningInvoice: highFive.lightningInvoice,
+          qrCodeUrl: qrCodeFullUrl
         });
         
         // Add Lightning invoice tags
         event.tags.push(['lightning', 'See content for full invoice']);
         event.tags.push(['l', 'Lightning payment available']);
+        event.tags.push(['image', qrCodeFullUrl]);
         
-        console.log('Added Lightning invoice to Nostr post');
+        console.log('Added Lightning invoice and QR code image to Nostr post');
       } catch (err) {
         console.error('Error adding Lightning details to Nostr post:', err);
         
@@ -225,13 +234,14 @@ export async function publishHighFiveToNostr(highFive: {
   }
 }
 
-// Format high five content
+// Format high five content including QR code image when available
 function formatHighFiveContent(
   highFive: {
     recipient: string;
     reason: string;
     sender?: string;
     lightningInvoice?: string;
+    qrCodeUrl?: string;
   }
 ): string {
   // Format sender display
@@ -255,16 +265,25 @@ function formatHighFiveContent(
     console.log(`Adding mention for recipient: ${highFive.recipient}`);
   }
 
-  // New format according to specifications
+  // Basic content parts
   const parts = [
     `🖐️ High Five 🖐️ to ${recipientPart} from ${senderPart}`,
     '',
     highFive.reason
   ];
   
+  // Add QR code image if available
+  if (highFive.qrCodeUrl) {
+    parts.push('');
+    parts.push('Scan QR code to pay with Bitcoin Lightning:');
+    parts.push('');
+    parts.push(`![QR Code Payment](${highFive.qrCodeUrl})`);
+  }
+  
   // Add the payment instruction if available
   if (highFive.lightningInvoice) {
     parts.push('');
+    parts.push('Payment details:');
     parts.push(highFive.lightningInvoice);
   }
   
