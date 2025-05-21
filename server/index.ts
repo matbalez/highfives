@@ -48,6 +48,19 @@ app.use((req, res, next) => {
     // Continue execution even if migrations fail
   }
   
+  // Serve static QR code images from public directory - add this before routes
+  // This ensures QR code images are always accessible
+  const qrCodesDir = path.join(process.cwd(), 'public', 'qr-codes');
+  app.use('/qr-codes', express.static(qrCodesDir, {
+    index: false,
+    setHeaders: (res) => {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+      // Allow cross-origin access for images
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+  }));
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
