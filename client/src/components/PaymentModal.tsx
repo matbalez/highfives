@@ -233,50 +233,48 @@ export default function PaymentModal({
                 />
               </div>
               
-              <div className="flex flex-col items-center mt-4 gap-2">
-                <div className="text-sm text-gray-600">{getQRCodeLabel()}</div>
-                <button
-                  className="mt-2 px-4 py-1 text-xs rounded bg-primary/10 hover:bg-primary/20 text-primary flex items-center gap-1"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Create a temporary element
-                    const el = document.createElement('textarea');
-                    el.value = paymentData.paymentInstructions;
-                    el.setAttribute('readonly', '');
-                    el.style.position = 'absolute';
-                    el.style.left = '-9999px';
-                    document.body.appendChild(el);
-                    
-                    // Select and copy the text
-                    el.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(el);
-                    
-                    // Show toast notification
-                    toast({
-                      title: "Copied to clipboard",
-                      description: "You can now paste the payment instructions in your wallet app",
-                    });
-                  }}
-                >
-                  <span>Copy to clipboard</span>
-                </button>
+              <div className="text-center mt-4">
+                <div className="text-sm text-gray-600 mb-2">{getQRCodeLabel()}</div>
               </div>
               
               {getAdditionalInfo()}
             </>
           )}
           
-          <Button 
-            className="mt-6 w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
-            onClick={handleConfirmPayment}
-            disabled={isLoading || !paymentData || !paymentData.paymentInstructions}
-          >
-            {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
-          </Button>
+          <div className="w-full flex flex-col gap-3">
+            <button 
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded transition-colors"
+              type="button"
+              disabled={isLoading || !paymentData || !paymentData.paymentInstructions}
+              onClick={(e) => {
+                e.preventDefault();
+                if (paymentData?.paymentInstructions) {
+                  const textArea = document.createElement('textarea');
+                  textArea.value = paymentData.paymentInstructions;
+                  textArea.style.position = 'fixed';
+                  document.body.appendChild(textArea);
+                  textArea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textArea);
+                  
+                  toast({
+                    title: "Copied to clipboard",
+                    description: "Payment instructions copied successfully",
+                  });
+                }
+              }}
+            >
+              Copy payment instructions
+            </button>
+            
+            <Button 
+              className="w-full bg-primary hover:bg-primary/90 text-white font-futura font-bold py-3 px-6 rounded-lg transition duration-300"
+              onClick={handleConfirmPayment}
+              disabled={isLoading || !paymentData || !paymentData.paymentInstructions}
+            >
+              {isLoading ? "Looking up payment details..." : "I have sent the bitcoin"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
