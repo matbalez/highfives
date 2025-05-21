@@ -274,17 +274,12 @@ function formatHighFiveContent(
   // Add QR code image if available
   if (highFive.qrCodeUrl) {
     parts.push('');
-    parts.push('Scan QR code to pay with Bitcoin Lightning:');
+    parts.push('You too can send them bitcoin with your BOLT12 wallet:');
     parts.push('');
-    parts.push(`![QR Code Payment](${highFive.qrCodeUrl})`);
+    parts.push(highFive.qrCodeUrl);
   }
   
-  // Add the payment instruction if available
-  if (highFive.lightningInvoice) {
-    parts.push('');
-    parts.push('Payment details:');
-    parts.push(highFive.lightningInvoice);
-  }
+  // No longer including the payment instruction text since we have the QR code
   
   parts.push('');
   parts.push('#highfives');
