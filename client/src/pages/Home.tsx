@@ -31,7 +31,7 @@ export default function Home() {
             {/* Attractive suggestion text box */}
             <div className="mt-6 mb-6 bg-orange-100 border border-orange-200 rounded-lg p-4 text-center shadow-sm">
               <p className="text-amber-800 font-medium">
-                You can send any amount, but we think <span className="font-bold">₿21,000</span> has a nice ring to it
+                We think <span className="font-bold">₿21,000</span> is a nice round number to celebrate someone with, don't you?
               </p>
             </div>
             
