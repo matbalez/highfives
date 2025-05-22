@@ -29,9 +29,9 @@ export default function Home() {
             <HighFiveForm />
             
             {/* Attractive suggestion text box */}
-            <div className="mt-6 mb-6 bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-200 rounded-lg p-4 text-center shadow-sm">
+            <div className="mt-6 mb-6 bg-orange-100 border border-orange-200 rounded-lg p-4 text-center shadow-sm">
               <p className="text-amber-800 font-medium">
-                You can send any amount, but <span className="font-bold">₿21K</span> has a nice ring to it
+                You can send any amount, but we think <span className="font-bold">₿21,000</span> has a nice ring to it
               </p>
             </div>
             
