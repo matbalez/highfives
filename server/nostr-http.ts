@@ -269,9 +269,16 @@ function formatHighFiveContent(
   // Check if this is a BOLT12 offer to modify the recipient display
   const isBolt12ForDisplay = highFive.lightningInvoice && highFive.lightningInvoice.startsWith('bitcoin:?lno=');
   
+  console.log(`Payment instruction type check for Nostr display: 
+    Is BOLT12: ${isBolt12ForDisplay ? 'Yes' : 'No'}
+    Payment instruction: ${highFive.lightningInvoice ? highFive.lightningInvoice.substring(0, 20) + '...' : 'None'}
+    Recipient: ${recipientPart}
+  `);
+  
   // For BOLT12 offers, add the Bitcoin symbol (₿) before the recipient address
   if (isBolt12ForDisplay) {
     recipientPart = `₿${recipientPart}`;
+    console.log(`Added Bitcoin symbol to recipient: ${recipientPart}`);
   }
 
   // Basic content parts
