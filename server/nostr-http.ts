@@ -265,6 +265,14 @@ function formatHighFiveContent(
     // Format as a proper Nostr mention
     console.log(`Adding mention for recipient: ${highFive.recipient}`);
   }
+  
+  // Check if this is a BOLT12 offer to modify the recipient display
+  const isBolt12ForDisplay = highFive.lightningInvoice && highFive.lightningInvoice.startsWith('bitcoin:?lno=');
+  
+  // For BOLT12 offers, add the Bitcoin symbol (₿) before the recipient address
+  if (isBolt12ForDisplay) {
+    recipientPart = `₿${recipientPart}`;
+  }
 
   // Basic content parts
   const parts = [
