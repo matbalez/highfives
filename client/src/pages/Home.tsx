@@ -27,7 +27,15 @@ export default function Home() {
           {/* Form Section */}
           <div className="mb-8 max-w-md mx-auto">
             <HighFiveForm />
-            <div className="mt-12 flex justify-center">
+            
+            {/* Attractive suggestion text box */}
+            <div className="mt-6 mb-6 bg-gradient-to-r from-amber-100 to-yellow-100 border border-amber-200 rounded-lg p-4 text-center shadow-sm">
+              <p className="text-amber-800 font-medium">
+                You can send any amount, but <span className="font-bold">₿21K</span> has a nice ring to it
+              </p>
+            </div>
+            
+            <div className="mt-8 flex justify-center">
               <img 
                 src={bitcoinHighFiveImage} 
                 alt="Bitcoin High Five" 
