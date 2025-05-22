@@ -265,21 +265,6 @@ function formatHighFiveContent(
     // Format as a proper Nostr mention
     console.log(`Adding mention for recipient: ${highFive.recipient}`);
   }
-  
-  // Check if this is a BOLT12 offer to modify the recipient display
-  const isBolt12ForDisplay = highFive.lightningInvoice && highFive.lightningInvoice.startsWith('bitcoin:?lno=');
-  
-  console.log(`Payment instruction type check for Nostr display: 
-    Is BOLT12: ${isBolt12ForDisplay ? 'Yes' : 'No'}
-    Payment instruction: ${highFive.lightningInvoice ? highFive.lightningInvoice.substring(0, 20) + '...' : 'None'}
-    Recipient: ${recipientPart}
-  `);
-  
-  // For BOLT12 offers, add the Bitcoin symbol (₿) before the recipient address
-  if (isBolt12ForDisplay) {
-    recipientPart = `₿${recipientPart}`;
-    console.log(`Added Bitcoin symbol to recipient: ${recipientPart}`);
-  }
 
   // Basic content parts
   const parts = [
@@ -291,6 +276,13 @@ function formatHighFiveContent(
   // Show different messages based on whether this is a Lightning Address or BOLT12
   // Check if this is a BOLT12 offer (will start with "bitcoin:?lno=")
   const isBolt12 = highFive.lightningInvoice && highFive.lightningInvoice.startsWith('bitcoin:?lno=');
+  
+  // Modify the first line for BOLT12 offers to include the Bitcoin symbol
+  if (isBolt12) {
+    // Replace the first item in the parts array with the Bitcoin symbol version
+    parts[0] = `🖐️ High Five 🖐️ to ₿${recipientPart} from ${senderPart}`;
+    console.log(`Added Bitcoin symbol to BOLT12 recipient in Nostr post: ₿${recipientPart}`);
+  }
   
   if (isBolt12 && highFive.qrCodeUrl) {
     // For BOLT12 offers (from btag DNS lookup)
