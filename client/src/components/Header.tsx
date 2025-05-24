@@ -109,7 +109,7 @@ export default function Header() {
           <DialogHeader>
             <DialogTitle>Disconnect Nostr Account</DialogTitle>
             <DialogDescription>
-              Are you sure you want to disconnect your Nostr account? You'll need to reconnect to send High Fives with your identity.
+              Disconnect Nostr Account?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
@@ -120,8 +120,8 @@ export default function Header() {
               Cancel
             </Button>
             <Button
-              variant="destructive"
               onClick={handleConfirmDisconnect}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
             >
               Disconnect
             </Button>
