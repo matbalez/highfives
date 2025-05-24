@@ -248,6 +248,9 @@ function formatHighFiveContent(
   // Format sender display
   let senderPart = '';
   let isAnonymous = false;
+  
+  console.log(`Formatting High Five content - sender value: "${highFive.sender}"`);
+  
   if (highFive.sender && highFive.sender !== 'Anonymous') {
     if (highFive.sender.startsWith('npub')) {
       // Format as a proper Nostr mention with npub
@@ -258,8 +261,10 @@ function formatHighFiveContent(
     } else {
       senderPart = highFive.sender;
     }
+    console.log(`Using non-anonymous sender: "${senderPart}"`);
   } else {
     isAnonymous = true;
+    console.log(`Sender is Anonymous or empty - will omit "from" part`);
   }
   
   // Format recipient display
