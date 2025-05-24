@@ -15,9 +15,12 @@ export default function Header() {
     setIsModalOpen(true);
   };
 
-  const handleDisconnect = () => {
-    setNostrUser(null);
-    setNostrProfileName(null);
+  const handleDisconnectClick = () => {
+    const confirmed = window.confirm("Are you sure you want to disconnect your Nostr account? You'll need to reconnect to send High Fives with your identity.");
+    if (confirmed) {
+      setNostrUser(null);
+      setNostrProfileName(null);
+    }
   };
   
   const handleLogoClick = () => {
@@ -68,7 +71,7 @@ export default function Header() {
               variant="outline" 
               size="sm"
               className="font-futura font-bold text-black bg-white border-2 border-primary hover:bg-white/90"
-              onClick={handleDisconnect}
+              onClick={handleDisconnectClick}
               title="Disconnect Nostr account"
             >
               <LogOut className="h-4 w-4" />
