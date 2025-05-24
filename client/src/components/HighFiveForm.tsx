@@ -314,7 +314,7 @@ export default function HighFiveForm() {
                   <FormControl>
                     <Input
                       placeholder={nostrUser ? "Connected with Nostr" : "Anonymous"}
-                      className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${!nostrUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${!nostrUser ? 'bg-gray-100 cursor-not-allowed text-gray-400' : ''}`}
                       readOnly={!nostrUser}
                       {...field}
                     />
