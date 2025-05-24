@@ -257,18 +257,21 @@ function formatHighFiveContent(
                            highFive.sender === '<send anonymously>' ||
                            highFive.sender.includes('send anonymously');
   
+  console.log(`Anonymous check: sender="${highFive.sender}", shouldBeAnonymous=${shouldBeAnonymous}`);
+  console.log(`Conditions: !sender=${!highFive.sender}, equals Anonymous=${highFive.sender === 'Anonymous'}, equals <send anonymously>=${highFive.sender === '<send anonymously>'}, includes send anonymously=${highFive.sender?.includes('send anonymously')}`);
+  
   if (shouldBeAnonymous) {
     isAnonymous = true;
     console.log(`Sender is Anonymous or empty - will omit "from" part, isAnonymous = ${isAnonymous}`);
   } else {
-    if (highFive.sender.startsWith('npub')) {
+    if (highFive.sender && highFive.sender.startsWith('npub')) {
       // Format as a proper Nostr mention with npub
       senderPart = `${highFive.sender}`;
       
       // Add a log to track that we're adding Nostr mentions
       console.log(`Adding mention for sender: ${highFive.sender}`);
     } else {
-      senderPart = highFive.sender;
+      senderPart = highFive.sender || '';
     }
     console.log(`Using non-anonymous sender: "${senderPart}"`);
   }
