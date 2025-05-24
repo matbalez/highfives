@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import NostrConnectModal from "./NostrConnectModal";
 import { useStore } from "@/lib/store";
 import { Link, useLocation } from "wouter";
+import { LogOut } from "lucide-react";
 
 export default function Header() {
   const { nostrUser, setNostrUser, nostrProfileName, setNostrProfileName, isNostrConnected } = useStore();
@@ -40,21 +41,37 @@ export default function Header() {
         
         {isNostrConnected ? (
           <div className="flex items-center gap-2">
-            <a 
-              href={`https://njump.me/${nostrUser}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium truncate max-w-[150px] text-primary hover:text-primary/80 underline"
-            >
-              {nostrProfileName ? `Nostr profile: ${nostrProfileName}` : `${nostrUser?.substring(0, 8)}...`}
-            </a>
+            <div className="text-sm font-medium truncate max-w-[150px]">
+              {nostrProfileName ? (
+                <>
+                  Nostr profile: <a 
+                    href={`https://njump.me/${nostrUser}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-primary/80 underline"
+                  >
+                    {nostrProfileName}
+                  </a>
+                </>
+              ) : (
+                <a 
+                  href={`https://njump.me/${nostrUser}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 underline"
+                >
+                  {nostrUser?.substring(0, 8)}...
+                </a>
+              )}
+            </div>
             <Button 
               variant="outline" 
               size="sm"
               className="font-futura font-bold text-black bg-white border-2 border-primary hover:bg-white/90"
               onClick={handleDisconnect}
+              title="Disconnect Nostr account"
             >
-              Disconnect
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         ) : (
