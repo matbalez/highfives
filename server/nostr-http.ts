@@ -246,8 +246,9 @@ function formatHighFiveContent(
   }
 ): string {
   // Format sender display
-  let senderPart = 'Anonymous';
-  if (highFive.sender) {
+  let senderPart = '';
+  let isAnonymous = false;
+  if (highFive.sender && highFive.sender !== 'Anonymous') {
     if (highFive.sender.startsWith('npub')) {
       // Format as a proper Nostr mention with npub
       senderPart = `${highFive.sender}`;
@@ -257,6 +258,8 @@ function formatHighFiveContent(
     } else {
       senderPart = highFive.sender;
     }
+  } else {
+    isAnonymous = true;
   }
   
   // Format recipient display
@@ -276,7 +279,9 @@ function formatHighFiveContent(
   
   // Basic content parts with modified recipient if needed
   const parts = [
-    `🖐️ High Five 🖐️ to ${displayRecipient} from ${senderPart}`,
+    isAnonymous 
+      ? `🖐️ High Five 🖐️ to ${displayRecipient}`
+      : `🖐️ High Five 🖐️ to ${displayRecipient} from ${senderPart}`,
     '',
     highFive.reason
   ];
