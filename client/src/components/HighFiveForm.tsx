@@ -297,9 +297,6 @@ export default function HighFiveForm() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="font-futura font-bold text-lg">From:</span>
-                {!nostrUser && (
-                  <span className="text-gray-400 font-normal">&lt;send anonymously&gt;</span>
-                )}
                 {nostrUser && (
                   <a 
                     href={`https://njump.me/${nostrUser}`}
