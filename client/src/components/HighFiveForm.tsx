@@ -309,13 +309,16 @@ export default function HighFiveForm() {
                 )}
               </div>
               {!nostrUser && (
-                <button
-                  type="button"
-                  onClick={handleConnectNostrClick}
-                  className="text-sm text-primary hover:text-primary/80 underline font-medium"
-                >
-                  Connect your Nostr npub
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleConnectNostrClick}
+                    className="text-sm text-primary hover:text-primary/80 underline font-medium"
+                  >
+                    Connect your Nostr npub
+                  </button>
+                  <span className="text-sm text-gray-400">(optional)</span>
+                </div>
               )}
             </div>
 
