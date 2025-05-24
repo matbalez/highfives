@@ -54,7 +54,7 @@ export default function HighFiveForm() {
     defaultValues: {
       recipient: "",
       reason: "",
-      sender: nostrUser || "Anonymous",
+      sender: nostrUser || "<send anonymously>",
     },
   });
   
@@ -64,8 +64,8 @@ export default function HighFiveForm() {
       // Set the sender field with the nostrUser value when connected
       form.setValue("sender", nostrUser);
     } else {
-      // Set to Anonymous when disconnected
-      form.setValue("sender", "Anonymous");
+      // Set to <send anonymously> when disconnected
+      form.setValue("sender", "<send anonymously>");
     }
   }, [nostrUser, form]);
 
@@ -215,7 +215,7 @@ export default function HighFiveForm() {
     form.reset({
       recipient: "",
       reason: "",
-      sender: nostrUser || "Anonymous",
+      sender: nostrUser || "<send anonymously>",
     });
   };
 
