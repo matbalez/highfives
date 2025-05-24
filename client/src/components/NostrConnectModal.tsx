@@ -53,6 +53,7 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
   const [pin, setPin] = useState<string>('');
   const [generatedPin, setGeneratedPin] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [verifyingPin, setVerifyingPin] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   // Reset the form when modal opens
@@ -63,6 +64,7 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
       setPubkey('');
       setPin('');
       setGeneratedPin('');
+      setVerifyingPin(false);
       setError(null);
     }
   }, [isOpen]);
@@ -146,30 +148,37 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
 
   // Handle PIN verification
   const handlePinVerify = async () => {
-    if (pin === generatedPin) {
-      // PIN matches, set the user as connected
-      setNostrUser(npub);
-      
-      // Fetch profile name using the existing profile lookup endpoint used in High Fives
-      try {
-        const response = await fetch(`/api/payment-instructions?npub=${encodeURIComponent(npub)}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.profileName) {
-            setNostrProfileName(data.profileName);
-            console.log('Profile name fetched:', data.profileName);
-          } else {
-            console.log('No profile name found for this npub');
+    setVerifyingPin(true);
+    setError(null);
+    
+    try {
+      if (pin === generatedPin) {
+        // PIN matches, set the user as connected
+        setNostrUser(npub);
+        
+        // Fetch profile name using the existing profile lookup endpoint used in High Fives
+        try {
+          const response = await fetch(`/api/payment-instructions?npub=${encodeURIComponent(npub)}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.profileName) {
+              setNostrProfileName(data.profileName);
+              console.log('Profile name fetched:', data.profileName);
+            } else {
+              console.log('No profile name found for this npub');
+            }
           }
+        } catch (error) {
+          console.error('Error fetching profile name:', error);
+          // Continue without profile name if fetch fails
         }
-      } catch (error) {
-        console.error('Error fetching profile name:', error);
-        // Continue without profile name if fetch fails
+        
+        setStep('success');
+      } else {
+        setError('Incorrect PIN. Please try again.');
       }
-      
-      setStep('success');
-    } else {
-      setError('Incorrect PIN. Please try again.');
+    } finally {
+      setVerifyingPin(false);
     }
   };
 
@@ -251,9 +260,16 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
             <Button 
               onClick={handlePinVerify} 
               className="w-full" 
-              disabled={pin.length !== 4}
+              disabled={pin.length !== 4 || verifyingPin}
             >
-              Verify PIN
+              {verifyingPin ? (
+                <div className="flex items-center justify-center">
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent border-white"></div>
+                  Verifying...
+                </div>
+              ) : (
+                "Verify PIN"
+              )}
             </Button>
           </div>
         )}
