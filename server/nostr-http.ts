@@ -251,7 +251,7 @@ function formatHighFiveContent(
   
   console.log(`Formatting High Five content - sender value: "${highFive.sender}"`);
   
-  if (highFive.sender && highFive.sender !== 'Anonymous') {
+  if (highFive.sender && highFive.sender !== 'Anonymous' && highFive.sender !== '<send anonymously>') {
     if (highFive.sender.startsWith('npub')) {
       // Format as a proper Nostr mention with npub
       senderPart = `${highFive.sender}`;
