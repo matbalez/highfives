@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { HighFiveDetails } from "../lib/types";
 import SuccessScreen from "./SuccessScreen";
 import PaymentModal from "./PaymentModal";
+import NostrConnectModal from "./NostrConnectModal";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Select,
@@ -45,13 +46,15 @@ export default function HighFiveForm() {
   const [pendingHighFive, setPendingHighFive] = useState<HighFiveDetails | null>(null);
   // State to track input mode ('btag' or 'npub')
   const [inputMode, setInputMode] = useState<'btag' | 'npub'>('btag');
+  // State for Nostr connection modal
+  const [isNostrModalOpen, setIsNostrModalOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       recipient: "",
       reason: "",
-      sender: nostrUser || "",
+      sender: nostrUser || "Anonymous",
     },
   });
   
@@ -61,8 +64,8 @@ export default function HighFiveForm() {
       // Set the sender field with the nostrUser value when connected
       form.setValue("sender", nostrUser);
     } else {
-      // Clear the sender field when disconnected
-      form.setValue("sender", "");
+      // Set to Anonymous when disconnected
+      form.setValue("sender", "Anonymous");
     }
   }, [nostrUser, form]);
 
@@ -212,8 +215,12 @@ export default function HighFiveForm() {
     form.reset({
       recipient: "",
       reason: "",
-      sender: nostrUser || "",
+      sender: nostrUser || "Anonymous",
     });
+  };
+
+  const handleConnectNostrClick = () => {
+    setIsNostrModalOpen(true);
   };
 
   return (
@@ -292,12 +299,23 @@ export default function HighFiveForm() {
               name="sender"
               render={({ field }) => (
                 <FormItem className="space-y-2">
-                  <FormLabel className="font-futura font-bold text-lg">From:</FormLabel>
+                  <div className="flex justify-between items-center">
+                    <FormLabel className="font-futura font-bold text-lg">From:</FormLabel>
+                    {!nostrUser && (
+                      <button
+                        type="button"
+                        onClick={handleConnectNostrClick}
+                        className="text-xs text-primary hover:text-primary/80 underline font-medium"
+                      >
+                        Connect your Nostr npub
+                      </button>
+                    )}
+                  </div>
                   <FormControl>
                     <Input
-                      placeholder={nostrUser ? "Connected with Nostr" : "Your name or handle (Optional)"}
-                      className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${nostrUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                      readOnly={!!nostrUser}
+                      placeholder={nostrUser ? "Connected with Nostr" : "Anonymous"}
+                      className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${!nostrUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      readOnly={!nostrUser}
                       {...field}
                     />
                   </FormControl>
@@ -331,6 +349,11 @@ export default function HighFiveForm() {
           onConfirmPayment={sendHighFive}
         />
       )}
+
+      <NostrConnectModal 
+        isOpen={isNostrModalOpen} 
+        onClose={() => setIsNostrModalOpen(false)} 
+      />
     </>
   );
 }
