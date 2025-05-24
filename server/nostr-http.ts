@@ -264,7 +264,7 @@ function formatHighFiveContent(
     console.log(`Using non-anonymous sender: "${senderPart}"`);
   } else {
     isAnonymous = true;
-    console.log(`Sender is Anonymous or empty - will omit "from" part`);
+    console.log(`Sender is Anonymous or empty - will omit "from" part, isAnonymous = ${isAnonymous}`);
   }
   
   // Format recipient display
@@ -283,10 +283,14 @@ function formatHighFiveContent(
   console.log(`Creating Nostr post with recipient: ${displayRecipient} (BOLT12: ${isBolt12 ? 'Yes' : 'No'})`);
   
   // Basic content parts with modified recipient if needed
+  const firstLine = isAnonymous 
+    ? `🖐️ High Five 🖐️ to ${displayRecipient}`
+    : `🖐️ High Five 🖐️ to ${displayRecipient} from ${senderPart}`;
+  
+  console.log(`Final first line of Nostr post: "${firstLine}" (isAnonymous: ${isAnonymous})`);
+  
   const parts = [
-    isAnonymous 
-      ? `🖐️ High Five 🖐️ to ${displayRecipient}`
-      : `🖐️ High Five 🖐️ to ${displayRecipient} from ${senderPart}`,
+    firstLine,
     '',
     highFive.reason
   ];
