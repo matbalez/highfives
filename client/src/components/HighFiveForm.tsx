@@ -39,7 +39,7 @@ const formSchema = z.object({
 });
 
 export default function HighFiveForm() {
-  const { bitcoinBalance, setBitcoinBalance, nostrUser } = useStore();
+  const { bitcoinBalance, setBitcoinBalance, nostrUser, nostrProfileName } = useStore();
   const { toast } = useToast();
   const [successDetails, setSuccessDetails] = useState<HighFiveDetails | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -301,7 +301,7 @@ export default function HighFiveForm() {
                   <span className="text-gray-400 font-normal">&lt;send anonymously&gt;</span>
                 )}
                 {nostrUser && (
-                  <span className="font-medium break-words">{nostrUser}</span>
+                  <span className="font-medium break-words">{nostrProfileName || nostrUser}</span>
                 )}
               </div>
               {!nostrUser && (

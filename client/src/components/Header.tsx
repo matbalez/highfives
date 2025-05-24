@@ -16,6 +16,7 @@ export default function Header() {
 
   const handleDisconnect = () => {
     setNostrUser(null);
+    setNostrProfileName(null);
   };
   
   const handleLogoClick = () => {
@@ -40,7 +41,7 @@ export default function Header() {
         {isNostrConnected ? (
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium truncate max-w-[150px]">
-              {nostrUser?.substring(0, 8)}...
+              {nostrProfileName ? `Nostr profile: ${nostrProfileName}` : `${nostrUser?.substring(0, 8)}...`}
             </div>
             <Button 
               variant="outline" 
