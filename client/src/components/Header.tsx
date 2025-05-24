@@ -5,10 +5,19 @@ import NostrConnectModal from "./NostrConnectModal";
 import { useStore } from "@/lib/store";
 import { Link, useLocation } from "wouter";
 import { LogOut } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Header() {
   const { nostrUser, setNostrUser, nostrProfileName, setNostrProfileName, isNostrConnected } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDisconnectDialogOpen, setIsDisconnectDialogOpen] = useState(false);
   const [location, setLocation] = useLocation();
   
   const handleConnectClick = () => {
@@ -16,11 +25,13 @@ export default function Header() {
   };
 
   const handleDisconnectClick = () => {
-    const confirmed = window.confirm("Are you sure you want to disconnect your Nostr account? You'll need to reconnect to send High Fives with your identity.");
-    if (confirmed) {
-      setNostrUser(null);
-      setNostrProfileName(null);
-    }
+    setIsDisconnectDialogOpen(true);
+  };
+
+  const handleConfirmDisconnect = () => {
+    setNostrUser(null);
+    setNostrProfileName(null);
+    setIsDisconnectDialogOpen(false);
   };
   
   const handleLogoClick = () => {
@@ -92,6 +103,31 @@ export default function Header() {
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
       />
+
+      <Dialog open={isDisconnectDialogOpen} onOpenChange={setIsDisconnectDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Disconnect Nostr Account</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to disconnect your Nostr account? You'll need to reconnect to send High Fives with your identity.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDisconnectDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDisconnect}
+            >
+              Disconnect
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
