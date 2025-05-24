@@ -251,7 +251,16 @@ function formatHighFiveContent(
   
   console.log(`Formatting High Five content - sender value: "${highFive.sender}"`);
   
-  if (highFive.sender && highFive.sender !== 'Anonymous' && highFive.sender !== '<send anonymously>') {
+  // Check if this should be anonymous
+  const shouldBeAnonymous = !highFive.sender || 
+                           highFive.sender === 'Anonymous' || 
+                           highFive.sender === '<send anonymously>' ||
+                           highFive.sender.includes('send anonymously');
+  
+  if (shouldBeAnonymous) {
+    isAnonymous = true;
+    console.log(`Sender is Anonymous or empty - will omit "from" part, isAnonymous = ${isAnonymous}`);
+  } else {
     if (highFive.sender.startsWith('npub')) {
       // Format as a proper Nostr mention with npub
       senderPart = `${highFive.sender}`;
@@ -262,9 +271,6 @@ function formatHighFiveContent(
       senderPart = highFive.sender;
     }
     console.log(`Using non-anonymous sender: "${senderPart}"`);
-  } else {
-    isAnonymous = true;
-    console.log(`Sender is Anonymous or empty - will omit "from" part, isAnonymous = ${isAnonymous}`);
   }
   
   // Format recipient display
