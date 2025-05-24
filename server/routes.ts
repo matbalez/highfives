@@ -407,13 +407,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/profile-name", async (req: Request, res: Response) => {
     try {
+      console.log("Profile name API called with query:", req.query);
       const { npub } = req.query;
       
       if (!npub || typeof npub !== 'string') {
+        console.log("Invalid npub parameter:", npub);
         return res.status(400).json({ error: "Missing or invalid npub parameter" });
       }
       
+      console.log("Looking up profile name for npub:", npub);
       const profileName = await getProfileNameFromNpub(npub);
+      console.log("Profile name result:", profileName);
       
       res.status(200).json({ 
         npub,

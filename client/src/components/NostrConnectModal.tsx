@@ -150,13 +150,16 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
       // PIN matches, set the user as connected
       setNostrUser(npub);
       
-      // Fetch profile name from server
+      // Fetch profile name using the existing profile lookup endpoint used in High Fives
       try {
-        const response = await fetch(`/api/profile-name?npub=${encodeURIComponent(npub)}`);
+        const response = await fetch(`/api/payment-instructions?npub=${encodeURIComponent(npub)}`);
         if (response.ok) {
           const data = await response.json();
           if (data.profileName) {
             setNostrProfileName(data.profileName);
+            console.log('Profile name fetched:', data.profileName);
+          } else {
+            console.log('No profile name found for this npub');
           }
         }
       } catch (error) {
