@@ -294,34 +294,26 @@ export default function HighFiveForm() {
 
 
 
-            <FormField
-              control={form.control}
-              name="sender"
-              render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <FormLabel className="font-futura font-bold text-lg">From:</FormLabel>
-                    {!nostrUser && (
-                      <button
-                        type="button"
-                        onClick={handleConnectNostrClick}
-                        className="text-xs text-primary hover:text-primary/80 underline font-medium"
-                      >
-                        Connect your Nostr npub
-                      </button>
-                    )}
-                  </div>
-                  <FormControl>
-                    <Input
-                      placeholder={nostrUser ? "Connected with Nostr" : "<send anonymously>"}
-                      className={`p-3 focus:ring-primary placeholder:text-gray-400 placeholder:font-normal ${nostrUser ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-100 cursor-not-allowed text-gray-400'}`}
-                      readOnly={true}
-                      {...field}
-                    />
-                  </FormControl>
-                </FormItem>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-futura font-bold text-lg">From:</span>
+                {!nostrUser && (
+                  <span className="text-gray-400 font-normal">&lt;send anonymously&gt;</span>
+                )}
+                {nostrUser && (
+                  <span className="font-medium break-words">{nostrUser}</span>
+                )}
+              </div>
+              {!nostrUser && (
+                <button
+                  type="button"
+                  onClick={handleConnectNostrClick}
+                  className="text-sm text-primary hover:text-primary/80 underline font-medium"
+                >
+                  Connect your Nostr npub
+                </button>
               )}
-            />
+            </div>
 
             <Button
               type="submit"
