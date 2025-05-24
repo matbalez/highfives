@@ -301,7 +301,14 @@ export default function HighFiveForm() {
                   <span className="text-gray-400 font-normal">&lt;send anonymously&gt;</span>
                 )}
                 {nostrUser && (
-                  <span className="font-medium break-words">{nostrProfileName || nostrUser}</span>
+                  <a 
+                    href={`https://njump.me/${nostrUser}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium break-words text-primary hover:text-primary/80 underline"
+                  >
+                    {nostrProfileName || nostrUser}
+                  </a>
                 )}
               </div>
               {!nostrUser && (

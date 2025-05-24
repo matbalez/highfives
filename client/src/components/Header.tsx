@@ -40,9 +40,14 @@ export default function Header() {
         
         {isNostrConnected ? (
           <div className="flex items-center gap-2">
-            <div className="text-sm font-medium truncate max-w-[150px]">
+            <a 
+              href={`https://njump.me/${nostrUser}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium truncate max-w-[150px] text-primary hover:text-primary/80 underline"
+            >
               {nostrProfileName ? `Nostr profile: ${nostrProfileName}` : `${nostrUser?.substring(0, 8)}...`}
-            </div>
+            </a>
             <Button 
               variant="outline" 
               size="sm"
