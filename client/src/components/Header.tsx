@@ -107,10 +107,7 @@ export default function Header() {
       <Dialog open={isDisconnectDialogOpen} onOpenChange={setIsDisconnectDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Disconnect Nostr Account</DialogTitle>
-            <DialogDescription>
-              Disconnect Nostr Account?
-            </DialogDescription>
+            <DialogTitle>Disconnect Nostr Account?</DialogTitle>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
