@@ -405,6 +405,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/profile-name", async (req: Request, res: Response) => {
+    try {
+      const { npub } = req.query;
+      
+      if (!npub || typeof npub !== 'string') {
+        return res.status(400).json({ error: "Missing or invalid npub parameter" });
+      }
+      
+      const profileName = await getProfileNameFromNpub(npub);
+      
+      res.status(200).json({ 
+        npub,
+        profileName: profileName || null 
+      });
+    } catch (error) {
+      console.error("Error fetching profile name:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Remove duplicate code - QR code serving is now in index.ts
   console.log(`QR code directory: ${qrCodesDir}`);
 

@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { Link, useLocation } from "wouter";
 
 export default function Header() {
-  const { nostrUser, setNostrUser, isNostrConnected } = useStore();
+  const { nostrUser, setNostrUser, nostrProfileName, setNostrProfileName, isNostrConnected } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [location, setLocation] = useLocation();
   

@@ -46,7 +46,7 @@ const InputOTPSlot = ({ char, hasFakeCaret, isActive, className }: {
 };
 
 export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModalProps) {
-  const { setNostrUser } = useStore();
+  const { setNostrUser, setNostrProfileName } = useStore();
   const [step, setStep] = useState<NostrConnectStep>('npub');
   const [npub, setNpub] = useState<string>('');
   const [pubkey, setPubkey] = useState<string>('');
@@ -145,10 +145,25 @@ export default function NostrConnectModal({ isOpen, onClose }: NostrConnectModal
   };
 
   // Handle PIN verification
-  const handlePinVerify = () => {
+  const handlePinVerify = async () => {
     if (pin === generatedPin) {
       // PIN matches, set the user as connected
       setNostrUser(npub);
+      
+      // Fetch profile name from server
+      try {
+        const response = await fetch(`/api/profile-name?npub=${encodeURIComponent(npub)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profileName) {
+            setNostrProfileName(data.profileName);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile name:', error);
+        // Continue without profile name if fetch fails
+      }
+      
       setStep('success');
     } else {
       setError('Incorrect PIN. Please try again.');

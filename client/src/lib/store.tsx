@@ -8,6 +8,8 @@ interface StoreContextType {
   hideNotification: () => void;
   nostrUser: string | null;
   setNostrUser: (npub: string | null) => void;
+  nostrProfileName: string | null;
+  setNostrProfileName: (name: string | null) => void;
   isNostrConnected: boolean;
 }
 
@@ -17,6 +19,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [bitcoinBalance, setBitcoinBalance] = useState<number>(1000000);
   const [notificationVisible, setNotificationVisible] = useState<boolean>(false);
   const [nostrUser, setNostrUser] = useState<string | null>(null);
+  const [nostrProfileName, setNostrProfileName] = useState<string | null>(null);
 
   // Load user npub from localStorage on initial render
   useEffect(() => {
@@ -53,6 +56,8 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
         hideNotification,
         nostrUser,
         setNostrUser,
+        nostrProfileName,
+        setNostrProfileName,
         isNostrConnected: !!nostrUser
       }}
     >
