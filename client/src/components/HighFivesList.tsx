@@ -92,7 +92,7 @@ export default function HighFivesList() {
                     {format(parseISO(highFive.createdAt), 'MMM d')}
                   </p>
                 </div>
-                {highFive.sender && (
+                {highFive.sender && highFive.sender !== '<send anonymously>' && (
                   <div className="w-full sm:text-right">
                     <p className="font-medium break-words">
                       From: {highFive.sender?.startsWith('npub')

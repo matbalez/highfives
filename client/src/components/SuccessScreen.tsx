@@ -84,7 +84,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                     {new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
                   </p>
                 </div>
-                {highFive.sender && (
+                {highFive.sender && highFive.sender !== '<send anonymously>' && (
                   <div className="w-full sm:text-right">
                     <p className="font-medium break-words">
                       From: {highFive.sender?.startsWith('npub')
