@@ -119,7 +119,7 @@ export default function HighFivesList() {
               {highFive.nostrEventId && (
                 <div className="pt-3 text-center w-full">
                   <a 
-                    href={`https://nostr.watch/e/${highFive.nostrEventId}`}
+                    href={`https://njump.me/${highFive.nostrEventId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:text-primary/80 text-sm font-medium underline"
