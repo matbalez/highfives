@@ -44,7 +44,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
       aria-modal="true"
       role="dialog"
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 m-4 relative">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] p-6 m-4 relative flex flex-col">
         {/* Close button */}
         <button 
           onClick={onClose}
@@ -53,10 +53,13 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
         >
           <X className="h-5 w-5" />
         </button>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center flex-shrink-0">
           {/* Logo */}
           <img src={highFivesLogo} alt="High Fives Logo" className="h-20 mb-5" />
-          
+        </div>
+        
+        {/* Scrollable content area */}
+        <div className="flex-1 overflow-y-auto">
           {/* Card content */}
           <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 w-full border border-orange-200 shadow-sm">
             <div className="space-y-4">
@@ -71,7 +74,7 @@ export default function SuccessScreen({ highFive, onClose }: SuccessScreenProps)
                 </p>
               </div>
               
-              <div className="bg-white rounded-lg p-4 shadow-inner">
+              <div className="bg-white rounded-lg p-4 shadow-inner max-h-48 overflow-y-auto">
                 <p className="italic text-gray-700 whitespace-pre-line">{highFive.reason}</p>
               </div>
               
