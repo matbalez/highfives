@@ -1,17 +1,14 @@
-# High Five - Social Gratitude Platform
+# High Fives - Express Gratitude
 
-A mobile-optimized social gratitude platform leveraging blockchain technology to create meaningful micro-social interactions through seamless, user-friendly payment experiences.
+A simple platform that allows you to send a High Five to a bitcoiner to express gratitude and/or recognize their work. A High Five is simply a note accompanied by an optional payment (as honorarium) in bitcoin.
 
 ## 🌟 Features
 
-- **Lightning Network Payments**: Send and receive Bitcoin payments instantly with Lightning Network integration
-- **Nostr Protocol Integration**: Decentralized social features using the Nostr protocol for censorship-resistant communication
-- **Real-time Communication**: WebSocket-powered live updates and interactions
+- **Lightning Network Payments**: Send Bitcoin payments instantly with Lightning Network integration
+- **Nostr Protocol Integration**: High Fives are posted to Nostr
 - **Mobile-First Design**: Responsive design optimized for mobile devices
-- **Anonymous Posting**: Enhanced anonymous posting mechanism for privacy-focused interactions
-- **QR Code Generation**: Generate and share payment QR codes for easy transactions
 - **Lightning Address Support**: Send payments using Lightning addresses and npub identifiers
-- **DNS-based Payments**: Support for BIP-353 Bitcoin payment instructions via DNS lookup
+- **BOLT12 Payments**: Support for BIP-353 Bitcoin addresses 
 
 ## 🚀 Technology Stack
 
@@ -116,10 +113,6 @@ The application will be available at `http://localhost:5000`
 - Direct messaging capabilities
 - File sharing through Nostr events
 
-### File Storage
-- Blossom client integration for decentralized file storage
-- Image upload and QR code hosting
-- Fallback storage options
 
 ## 🚀 Deployment
 
